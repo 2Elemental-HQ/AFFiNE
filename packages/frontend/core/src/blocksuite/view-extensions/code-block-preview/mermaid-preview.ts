@@ -269,6 +269,12 @@ export class MermaidPreview extends SignalWatcher(
       tertiaryColor: backgroundSecondary,
       tertiaryTextColor: textColor,
       tertiaryBorderColor: borderColor,
+      clusterBkg: isDark ? '#1f2937' : '#f8fafc',
+      clusterBorder: isDark ? '#374151' : '#e2e8f0',
+      labelBoxBkgColor: backgroundPrimary,
+      labelBoxBorderColor: borderColor,
+      labelTextColor: textColor,
+      loopTextColor: textColor,
     };
   }
 

@@ -11,7 +11,7 @@ const MAX_NESTED_SVG_IMAGE_DEPTH = 2;
 
 const DEFAULT_SVG_SANITIZE_CONFIG: Config = {
   USE_PROFILES: { svg: true, svgFilters: true },
-  ADD_TAGS: ['use', 'style'],
+  ADD_TAGS: ['use', 'style', 'foreignObject'],
   ADD_ATTR: ['href', 'xlink:href', 'class', 'style', 'id'],
 };
 

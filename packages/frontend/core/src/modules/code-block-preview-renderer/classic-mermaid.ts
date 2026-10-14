@@ -43,6 +43,12 @@ function getThemeVariables(theme: MermaidRenderTheme | undefined) {
         tertiaryColor: '#1f2937',
         tertiaryTextColor: '#f3f4f6',
         tertiaryBorderColor: '#374151',
+        clusterBkg: '#1f2937',
+        clusterBorder: '#374151',
+        labelBoxBkgColor: '#2a2b2d',
+        labelBoxBorderColor: '#4b4d52',
+        labelTextColor: '#f3f4f6',
+        loopTextColor: '#f3f4f6',
       }
     : {
         darkMode: false,
@@ -63,6 +69,12 @@ function getThemeVariables(theme: MermaidRenderTheme | undefined) {
         tertiaryColor: '#e5e7eb',
         tertiaryTextColor: '#111827',
         tertiaryBorderColor: '#d1d5db',
+        clusterBkg: '#f8fafc',
+        clusterBorder: '#e2e8f0',
+        labelBoxBkgColor: '#f3f4f6',
+        labelBoxBorderColor: '#d1d5db',
+        labelTextColor: '#111827',
+        loopTextColor: '#111827',
       };
 }
 
