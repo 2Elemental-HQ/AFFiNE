@@ -109,6 +109,26 @@ export class MermaidPreview extends SignalWatcher(
       stroke-width: 1.5px;
     }
 
+    /* Dark mode enhancements for clusters and sequence diagrams */
+    :host([data-theme='dark']) .mermaid-preview-svg svg .cluster rect,
+    [data-theme='dark'] .mermaid-preview-svg svg .cluster rect {
+      fill: #1e293b;
+      stroke: #475569;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg .messageLine0,
+    :host([data-theme='dark']) .mermaid-preview-svg svg .messageLine1,
+    [data-theme='dark'] .mermaid-preview-svg svg .messageLine0,
+    [data-theme='dark'] .mermaid-preview-svg svg .messageLine1 {
+      stroke: #93c5fd;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg .messageText,
+    [data-theme='dark'] .mermaid-preview-svg svg .messageText {
+      fill: #f8fafc;
+      stroke: none;
+    }
+
     .mermaid-controls {
       position: absolute;
       top: 8px;
@@ -226,13 +246,18 @@ export class MermaidPreview extends SignalWatcher(
   }
 
   private _resolveMermaidTheme(): MermaidRenderTheme {
+    const htmlTheme = document.documentElement.dataset.theme;
+    if (htmlTheme === 'dark' || htmlTheme === 'light') {
+      return htmlTheme === 'dark' ? 'dark' : 'default';
+    }
     const themedElement =
       this.closest('[data-theme]') ??
-      document.querySelector('[data-theme]') ??
-      document.documentElement;
-    return (themedElement as HTMLElement).dataset.theme === 'dark'
-      ? 'dark'
-      : 'default';
+      document.querySelector('[data-theme]');
+    const dataTheme = (themedElement as HTMLElement)?.dataset?.theme;
+    if (dataTheme === 'dark' || dataTheme === 'light') {
+      return dataTheme === 'dark' ? 'dark' : 'default';
+    }
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'default';
   }
 
   private _resolveDynamicThemeVariables(): Record<string, string | boolean> {
