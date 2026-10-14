@@ -14,8 +14,7 @@ type NativePreviewHandlers = {
   renderTypstSvg?: (request: TypstRenderRequest) => Promise<TypstRenderResult>;
 };
 
-let enableMermaidWasmNativeRenderer =
-  BUILD_CONFIG.isIOS || BUILD_CONFIG.isAndroid;
+let enableMermaidWasmNativeRenderer = false;
 let nativePreviewHandlers: NativePreviewHandlers | null = null;
 
 export function setMermaidWasmNativeRendererEnabled(enabled: boolean) {

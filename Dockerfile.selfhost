@@ -1,0 +1,5 @@
+# syntax=docker/dockerfile:1.7
+FROM ghcr.io/toeverything/affine:stable
+
+# Kopieer de in GitHub Actions gecompileerde frontend naar de static web assets map
+COPY ./packages/frontend/apps/web/dist /app/static

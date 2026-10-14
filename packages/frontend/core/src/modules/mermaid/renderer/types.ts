@@ -13,6 +13,7 @@ export type MermaidRenderOptions = {
   svgOnly?: boolean;
   textMetrics?: MermaidTextMetrics;
   theme?: MermaidRenderTheme;
+  themeVariables?: Record<string, unknown>;
   fontFamily?: string;
   fontSize?: number;
 };

@@ -225,6 +225,43 @@ export class MermaidPreview extends SignalWatcher(
       : 'default';
   }
 
+  private _resolveDynamicThemeVariables(): Record<string, string | boolean> {
+    const isDark = this.mermaidTheme === 'dark';
+    const computed = window.getComputedStyle(this);
+
+    const getVar = (varName: string, fallback: string) => {
+      const val = computed.getPropertyValue(varName).trim();
+      return val || fallback;
+    };
+
+    const textColor = getVar('--affine-text-primary-color', isDark ? '#f3f4f6' : '#111827');
+    const borderColor = getVar('--affine-border-color', isDark ? '#4b4d52' : '#d1d5db');
+    const backgroundPrimary = getVar('--affine-background-primary-color', isDark ? '#2a2b2d' : '#ffffff');
+    const backgroundSecondary = getVar('--affine-background-secondary-color', isDark ? '#1f2937' : '#f9fafb');
+    const brandColor = getVar('--affine-brand-color', isDark ? '#4b5563' : '#6b7280');
+
+    return {
+      darkMode: isDark,
+      background: 'transparent',
+      mainBkg: backgroundPrimary,
+      nodeBorder: borderColor,
+      nodeTextColor: textColor,
+      textColor,
+      lineColor: brandColor,
+      arrowheadColor: brandColor,
+      edgeLabelBackground: backgroundSecondary,
+      primaryColor: backgroundPrimary,
+      primaryTextColor: textColor,
+      primaryBorderColor: borderColor,
+      secondaryColor: backgroundSecondary,
+      secondaryTextColor: textColor,
+      secondaryBorderColor: borderColor,
+      tertiaryColor: backgroundSecondary,
+      tertiaryTextColor: textColor,
+      tertiaryBorderColor: borderColor,
+    };
+  }
+
   private _syncMermaidTheme() {
     this.mermaidTheme = this._resolveMermaidTheme();
   }
@@ -395,6 +432,7 @@ export class MermaidPreview extends SignalWatcher(
           fastText: true,
           svgOnly: true,
           theme: this.mermaidTheme,
+          themeVariables: this._resolveDynamicThemeVariables(),
           fontFamily: 'IBM Plex Mono',
         },
       });
