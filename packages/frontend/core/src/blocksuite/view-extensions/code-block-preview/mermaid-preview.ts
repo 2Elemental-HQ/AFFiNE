@@ -247,8 +247,10 @@ export class MermaidPreview extends SignalWatcher(
     const textColor = getVar('--affine-text-primary-color', isDark ? '#f3f4f6' : '#111827');
     const borderColor = getVar('--affine-border-color', isDark ? '#4b4d52' : '#d1d5db');
     const backgroundPrimary = getVar('--affine-background-primary-color', isDark ? '#2a2b2d' : '#ffffff');
-    const backgroundSecondary = getVar('--affine-background-secondary-color', isDark ? '#1f2937' : '#f9fafb');
-    const brandColor = getVar('--affine-brand-color', isDark ? '#4b5563' : '#6b7280');
+    const backgroundSecondary = getVar('--affine-background-secondary-color', isDark ? '#1e293b' : '#f9fafb');
+    const brandColor = isDark
+      ? '#93c5fd'
+      : getVar('--affine-brand-color', '#3b82f6');
 
     return {
       darkMode: isDark,
@@ -269,12 +271,15 @@ export class MermaidPreview extends SignalWatcher(
       tertiaryColor: backgroundSecondary,
       tertiaryTextColor: textColor,
       tertiaryBorderColor: borderColor,
-      clusterBkg: isDark ? '#1f2937' : '#f8fafc',
-      clusterBorder: isDark ? '#374151' : '#e2e8f0',
+      clusterBkg: isDark ? '#1e293b' : '#f8fafc',
+      clusterBorder: isDark ? '#475569' : '#e2e8f0',
       labelBoxBkgColor: backgroundPrimary,
       labelBoxBorderColor: borderColor,
       labelTextColor: textColor,
       loopTextColor: textColor,
+      signalColor: brandColor,
+      signalTextColor: textColor,
+      actorLineColor: isDark ? '#94a3b8' : '#cbd5e1',
     };
   }
 
