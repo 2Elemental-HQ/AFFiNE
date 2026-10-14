@@ -91,12 +91,24 @@ export class MermaidPreview extends SignalWatcher(
     .mermaid-preview-svg svg text,
     .mermaid-preview-svg svg tspan {
       fill: ${unsafeCSSVarV2('text/primary')} !important;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    .mermaid-preview-svg foreignObject {
+      overflow: visible;
     }
 
     .mermaid-preview-svg foreignObject div,
     .mermaid-preview-svg foreignObject span,
     .mermaid-preview-svg foreignObject p {
       color: ${unsafeCSSVarV2('text/primary')} !important;
+      text-align: center !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      height: 100%;
+      line-height: 1.4;
     }
 
     /* Fix SVG node shapes, subgraphs and edges */
