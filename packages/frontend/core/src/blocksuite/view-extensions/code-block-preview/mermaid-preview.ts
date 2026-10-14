@@ -99,7 +99,7 @@ export class MermaidPreview extends SignalWatcher(
       color: ${unsafeCSSVarV2('text/primary')} !important;
     }
 
-    /* Fix black rects and subgraphs */
+    /* Fix SVG node shapes, subgraphs and edges */
     .mermaid-preview-svg svg .node rect,
     .mermaid-preview-svg svg .node circle,
     .mermaid-preview-svg svg .node ellipse,
@@ -107,14 +107,25 @@ export class MermaidPreview extends SignalWatcher(
     .mermaid-preview-svg svg .node path {
       fill: ${unsafeCSSVarV2('layer/background/secondary')} !important;
       stroke: ${unsafeCSSVarV2('layer/insideBorder/border')} !important;
+      stroke-width: 1.5px !important;
     }
 
     .mermaid-preview-svg svg .cluster rect {
-      fill: ${unsafeCSSVarV2('layer/background/overlayPanel')} !important;
+      fill: transparent !important;
       stroke: ${unsafeCSSVarV2('layer/insideBorder/border')} !important;
+      stroke-width: 1px !important;
     }
 
-    .mermaid-preview-svg svg .edgePath .path {
+    .mermaid-preview-svg svg .edgePath .path,
+    .mermaid-preview-svg svg path.flowchart-link {
+      stroke: ${unsafeCSSVarV2('text/secondary')} !important;
+      stroke-width: 1.5px !important;
+      fill: none !important;
+    }
+
+    .mermaid-preview-svg svg .marker,
+    .mermaid-preview-svg svg marker path {
+      fill: ${unsafeCSSVarV2('text/secondary')} !important;
       stroke: ${unsafeCSSVarV2('text/secondary')} !important;
     }
 

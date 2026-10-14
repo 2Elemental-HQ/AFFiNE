@@ -12,15 +12,6 @@ export class PreviewRendererFeatureSyncService extends Service {
   }
 
   syncFlag() {
-    const mermaidFlag =
-      this.featureFlagService.flags.enable_mermaid_wasm_native_renderer;
-
-    setMermaidWasmNativeRendererEnabled(!!mermaidFlag.value);
-    const subscription = mermaidFlag.$.pipe(distinctUntilChanged()).subscribe(
-      enabled => {
-        setMermaidWasmNativeRendererEnabled(!!enabled);
-      }
-    );
-    this.disposables.push(() => subscription.unsubscribe());
+    setMermaidWasmNativeRendererEnabled(false);
   }
 }
