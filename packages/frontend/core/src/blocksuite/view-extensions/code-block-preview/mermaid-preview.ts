@@ -99,6 +99,29 @@ export class MermaidPreview extends SignalWatcher(
       color: ${unsafeCSSVarV2('text/primary')} !important;
     }
 
+    /* Fix black rects and subgraphs */
+    .mermaid-preview-svg svg .node rect,
+    .mermaid-preview-svg svg .node circle,
+    .mermaid-preview-svg svg .node ellipse,
+    .mermaid-preview-svg svg .node polygon,
+    .mermaid-preview-svg svg .node path {
+      fill: ${unsafeCSSVarV2('layer/background/secondary')} !important;
+      stroke: ${unsafeCSSVarV2('layer/insideBorder/border')} !important;
+    }
+
+    .mermaid-preview-svg svg .cluster rect {
+      fill: ${unsafeCSSVarV2('layer/background/overlayPanel')} !important;
+      stroke: ${unsafeCSSVarV2('layer/insideBorder/border')} !important;
+    }
+
+    .mermaid-preview-svg svg .edgePath .path {
+      stroke: ${unsafeCSSVarV2('text/secondary')} !important;
+    }
+
+    .mermaid-preview-svg svg .edgeLabel {
+      background-color: ${unsafeCSSVarV2('layer/background/primary')} !important;
+    }
+
     .mermaid-controls {
       position: absolute;
       top: 8px;

@@ -8,11 +8,7 @@ import type { PreviewRenderRequestMap, PreviewRenderResultMap } from './types';
 export async function renderMermaidSvgBackend(
   request: PreviewRenderRequestMap['mermaid']
 ): Promise<PreviewRenderResultMap['mermaid']> {
-  if (!isMermaidWasmNativeRendererEnabled()) {
-    return renderClassicMermaidSvg(request);
-  }
-
-  return getMermaidRenderer().render(request);
+  return renderClassicMermaidSvg(request);
 }
 
 export async function renderTypstSvgBackend(
