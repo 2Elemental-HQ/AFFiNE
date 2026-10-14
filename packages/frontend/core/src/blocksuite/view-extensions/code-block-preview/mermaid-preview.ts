@@ -87,13 +87,20 @@ export class MermaidPreview extends SignalWatcher(
       transform-origin: center;
     }
 
-    /* Fallback styles for text when not styled by Mermaid */
+    /* Ensure text in SVG and foreignObject is legible and adopts theme colors */
     .mermaid-preview-svg svg text {
       font-family: 'IBM Plex Mono', monospace;
     }
 
     .mermaid-preview-svg foreignObject {
       overflow: visible;
+    }
+
+    .mermaid-preview-svg foreignObject div,
+    .mermaid-preview-svg foreignObject span,
+    .mermaid-preview-svg foreignObject p {
+      color: ${unsafeCSSVarV2('text/primary')};
+      font-family: 'IBM Plex Mono', monospace;
     }
 
     /* Fallback edge styling if unstyled */
