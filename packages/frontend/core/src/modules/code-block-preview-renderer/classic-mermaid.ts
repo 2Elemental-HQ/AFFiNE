@@ -108,12 +108,40 @@ function enqueueClassicMermaidRender<T>(task: () => Promise<T>): Promise<T> {
   return run;
 }
 
+function hasCustomMermaidConfig(code: string): boolean {
+  const trimmed = code.trim();
+  // Check for YAML frontmatter: starts with --- and has config: or theme:
+  if (trimmed.startsWith('---')) {
+    const endFrontmatter = trimmed.indexOf('---', 3);
+    if (endFrontmatter !== -1) {
+      const frontmatter = trimmed.slice(3, endFrontmatter);
+      if (frontmatter.includes('theme') || frontmatter.includes('config')) {
+        return true;
+      }
+    }
+  }
+  // Check for %%{init: directive
+  if (trimmed.startsWith('%%{init:')) {
+    return true;
+  }
+  return false;
+}
+
 export async function renderClassicMermaidSvg(
   request: MermaidRenderRequest
 ): Promise<MermaidRenderResult> {
   return enqueueClassicMermaidRender(async () => {
     const mermaid = await loadMermaid();
-    mermaid.initialize(createClassicMermaidConfig(request.options));
+    const hasCustomConfig = hasCustomMermaidConfig(request.code);
+
+    const baseConfig = createClassicMermaidConfig(request.options);
+    if (hasCustomConfig) {
+      // If the diagram provides its own config/frontmatter, avoid injecting
+      // rigid themeVariables that clobber the user-specified theme.
+      delete (baseConfig as any).themeVariables;
+    }
+
+    mermaid.initialize(baseConfig);
 
     const { svg } = await mermaid.render(createDiagramId(), request.code);
     return { svg };

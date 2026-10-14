@@ -87,62 +87,19 @@ export class MermaidPreview extends SignalWatcher(
       transform-origin: center;
     }
 
-    /* Mermaid embeds theme CSS that may not apply after sanitization. */
-    .mermaid-preview-svg svg text,
-    .mermaid-preview-svg svg tspan {
-      fill: ${unsafeCSSVarV2('text/primary')} !important;
-      text-anchor: middle;
-      dominant-baseline: central;
+    /* Fallback styles for text when not styled by Mermaid */
+    .mermaid-preview-svg svg text {
+      font-family: 'IBM Plex Mono', monospace;
     }
 
     .mermaid-preview-svg foreignObject {
       overflow: visible;
     }
 
-    .mermaid-preview-svg foreignObject div,
-    .mermaid-preview-svg foreignObject span,
-    .mermaid-preview-svg foreignObject p {
-      color: ${unsafeCSSVarV2('text/primary')} !important;
-      text-align: center !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      height: 100%;
-      line-height: 1.4;
-    }
-
-    /* Fix SVG node shapes, subgraphs and edges */
-    .mermaid-preview-svg svg .node rect,
-    .mermaid-preview-svg svg .node circle,
-    .mermaid-preview-svg svg .node ellipse,
-    .mermaid-preview-svg svg .node polygon,
-    .mermaid-preview-svg svg .node path {
-      fill: ${unsafeCSSVarV2('layer/background/secondary')} !important;
-      stroke: ${unsafeCSSVarV2('layer/insideBorder/border')} !important;
-      stroke-width: 1.5px !important;
-    }
-
-    .mermaid-preview-svg svg .cluster rect {
-      fill: transparent !important;
-      stroke: ${unsafeCSSVarV2('layer/insideBorder/border')} !important;
-      stroke-width: 1px !important;
-    }
-
+    /* Fallback edge styling if unstyled */
     .mermaid-preview-svg svg .edgePath .path,
     .mermaid-preview-svg svg path.flowchart-link {
-      stroke: ${unsafeCSSVarV2('text/secondary')} !important;
-      stroke-width: 1.5px !important;
-      fill: none !important;
-    }
-
-    .mermaid-preview-svg svg .marker,
-    .mermaid-preview-svg svg marker path {
-      fill: ${unsafeCSSVarV2('text/secondary')} !important;
-      stroke: ${unsafeCSSVarV2('text/secondary')} !important;
-    }
-
-    .mermaid-preview-svg svg .edgeLabel {
-      background-color: ${unsafeCSSVarV2('layer/background/primary')} !important;
+      stroke-width: 1.5px;
     }
 
     .mermaid-controls {
