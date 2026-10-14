@@ -15,9 +15,9 @@ function toTheme(theme: MermaidRenderTheme | undefined) {
     case 'modern':
       return 'base' as const;
     case 'dark':
-      return 'dark' as const;
+      return 'base' as const;
     default:
-      return 'default' as const;
+      return 'base' as const;
   }
 }
 
@@ -149,8 +149,9 @@ export async function renderClassicMermaidSvg(
     const baseConfig = createClassicMermaidConfig(request.options);
     if (hasCustomConfig) {
       // If the diagram provides its own config/frontmatter, avoid injecting
-      // rigid themeVariables that clobber the user-specified theme.
+      // rigid themeVariables or overriding theme that clobber the user-specified theme.
       delete (baseConfig as any).themeVariables;
+      delete (baseConfig as any).theme;
     }
 
     mermaid.initialize(baseConfig);

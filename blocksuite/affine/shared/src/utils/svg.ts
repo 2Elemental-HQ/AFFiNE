@@ -25,7 +25,7 @@ const SVG_DATA_URL_PATTERN =
 const SAFE_IMAGE_DATA_URL_PATTERN =
   /^data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,[a-z0-9+/=]+$/i;
 const UNSAFE_CSS_PATTERN =
-  /(?:url\s*\(|@import|javascript\s*:|expression\s*\(|-moz-binding)/i;
+  /(?:url\s*\(\s*(?!['"]?#)|@import|javascript\s*:|expression\s*\(|-moz-binding)/i;
 
 const SVG_ROOT_ATTRIBUTES = [
   'class',
