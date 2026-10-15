@@ -1,6 +1,7 @@
-import { IconButton, Menu, MenuItem } from '@affine/component';
+import { IconButton, Menu, MenuItem, MenuSeparator } from '@affine/component';
 import { Divider } from '@affine/component/ui/divider';
 import { useEnableCloud } from '@affine/core/components/hooks/affine/use-enable-cloud';
+import { useKnownAccounts } from '@affine/core/components/hooks/affine/use-known-accounts';
 import { useSignOut } from '@affine/core/components/hooks/affine/use-sign-out';
 import { useAsyncCallback } from '@affine/core/components/hooks/affine-async-hooks';
 import { useNavigateHelper } from '@affine/core/components/hooks/use-navigate-helper';
@@ -18,8 +19,10 @@ import {
   AccountIcon,
   CloudWorkspaceIcon,
   DeleteIcon,
+  DoneIcon,
   LocalWorkspaceIcon,
   MoreHorizontalIcon,
+  PlusIcon,
   SelfhostIcon,
   SignOutIcon,
 } from '@blocksuite/icons/rc';
@@ -51,6 +54,8 @@ const WorkspaceServerInfo = ({
   accountStatus,
   onDeleteServer,
   onSignOut,
+  onAddAccount,
+  onSwitchAccount,
 }: {
   server: string;
   name: string;
@@ -58,8 +63,11 @@ const WorkspaceServerInfo = ({
   accountStatus?: 'authenticated' | 'unauthenticated';
   onDeleteServer?: () => void;
   onSignOut?: () => void;
+  onAddAccount?: () => void;
+  onSwitchAccount?: (email: string) => void;
 }) => {
   const t = useI18n();
+  const { knownAccounts } = useKnownAccounts();
   const isCloud = server !== 'local';
   const isAffineCloud = server === 'affine-cloud';
   const Icon = isAffineCloud
@@ -68,32 +76,90 @@ const WorkspaceServerInfo = ({
       ? SelfhostIcon
       : LocalWorkspaceIcon;
 
-  const menuItems = useMemo(
-    () =>
-      [
-        server !== 'affine-cloud' && server !== 'local' && (
-          <MenuItem
-            prefixIcon={<DeleteIcon />}
-            type="danger"
-            key="delete-server"
-            onClick={onDeleteServer}
-          >
-            {t['com.affine.server.delete']()}
-          </MenuItem>
-        ),
-        accountStatus === 'authenticated' && (
-          <MenuItem
-            prefixIcon={<SignOutIcon />}
-            key="sign-out"
-            onClick={onSignOut}
-            type="danger"
-          >
-            {t['Sign out']()}
-          </MenuItem>
-        ),
-      ].filter(Boolean),
-    [accountStatus, onDeleteServer, onSignOut, server, t]
+  const otherAccounts = useMemo(
+    () => knownAccounts.filter(a => a.email !== account?.email),
+    [knownAccounts, account?.email]
   );
+
+  const menuItems = useMemo(() => {
+    const items = [];
+
+    // Switch account section if there are multiple accounts or user wants to add an account
+    if (isCloud && accountStatus === 'authenticated') {
+      if (otherAccounts.length > 0) {
+        items.push(
+          ...otherAccounts.map(other => (
+            <MenuItem
+              key={`switch-account-${other.id}`}
+              prefixIcon={<AccountIcon />}
+              onClick={() => onSwitchAccount?.(other.email)}
+            >
+              <div className={styles.accountMenuItem}>
+                <div className={styles.accountInfo}>
+                  <div className={styles.accountName}>
+                    {other.name || other.email}
+                  </div>
+                  {other.name ? (
+                    <div className={styles.accountEmail}>{other.email}</div>
+                  ) : null}
+                </div>
+              </div>
+            </MenuItem>
+          ))
+        );
+      }
+
+      items.push(
+        <MenuItem
+          key="add-account"
+          prefixIcon={<PlusIcon />}
+          onClick={onAddAccount}
+        >
+          {t['com.affine.brand.affineCloud'] ? `${t['com.affine.auth.sign.up']()} / Switch account` : 'Switch account'}
+        </MenuItem>
+      );
+
+      items.push(<MenuSeparator key="account-separator" />);
+    }
+
+    if (server !== 'affine-cloud' && server !== 'local') {
+      items.push(
+        <MenuItem
+          prefixIcon={<DeleteIcon />}
+          type="danger"
+          key="delete-server"
+          onClick={onDeleteServer}
+        >
+          {t['com.affine.server.delete']()}
+        </MenuItem>
+      );
+    }
+
+    if (accountStatus === 'authenticated') {
+      items.push(
+        <MenuItem
+          prefixIcon={<SignOutIcon />}
+          key="sign-out"
+          onClick={onSignOut}
+          type="danger"
+        >
+          {t['Sign out']()}
+        </MenuItem>
+      );
+    }
+
+    return items;
+  }, [
+    accountStatus,
+    isCloud,
+    onAddAccount,
+    onDeleteServer,
+    onSignOut,
+    onSwitchAccount,
+    otherAccounts,
+    server,
+    t,
+  ]);
 
   return (
     <div className={styles.workspaceServer}>
@@ -170,6 +236,13 @@ const CloudWorkSpaceList = ({
     });
   }, [globalDialogService, server.baseUrl]);
 
+  const handleSwitchAccount = useCallback((_email: string) => {
+    // Open sign-in dialog for switching accounts
+    globalDialogService.open('sign-in', {
+      server: server.baseUrl,
+    });
+  }, [globalDialogService, server.baseUrl]);
+
   return (
     <>
       <WorkspaceServerInfo
@@ -179,6 +252,8 @@ const CloudWorkSpaceList = ({
         accountStatus={accountStatus}
         onDeleteServer={handleDeleteServer}
         onSignOut={handleSignOut}
+        onAddAccount={handleSignIn}
+        onSwitchAccount={handleSwitchAccount}
       />
       {accountStatus === 'unauthenticated' ? (
         <MenuItem key="sign-in" onClick={handleSignIn}>

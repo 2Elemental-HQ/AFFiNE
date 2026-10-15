@@ -98,3 +98,44 @@ export const signInText = style({
   fontWeight: 500,
   color: cssVarV2.text.primary,
 });
+
+export const accountMenuItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  width: '100%',
+  gap: 8,
+});
+
+export const accountInfo = style({
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  flex: 1,
+});
+
+export const accountEmail = style([
+  ellipsis,
+  {
+    fontSize: cssVar('fontXs'),
+    lineHeight: '18px',
+    color: cssVarV2.text.secondary,
+  },
+]);
+
+export const accountName = style([
+  ellipsis,
+  {
+    fontSize: cssVar('fontSm'),
+    lineHeight: '20px',
+    fontWeight: 500,
+    color: cssVarV2.text.primary,
+  },
+]);
+
+export const activeAccountCheck = style({
+  color: cssVarV2.icon.activated,
+  fontSize: 16,
+  flexShrink: 0,
+});
+
