@@ -205,24 +205,27 @@ function parseFoldersYDoc(ydoc: Y.Doc) {
     folderId: string;
     index: string;
   }> = [];
+  const rawRecords: any[] = [];
 
-  for (const [key, map] of ydoc.share.entries()) {
-    if (map && typeof (map as any).get === 'function') {
-      if ((map as any).get('$$DELETED')) continue;
-      const id = ((map as any).get('id') as string) || key;
-      const parentId = ((map as any).get('parentId') as string) || null;
-      const type = (map as any).get('type') as string;
-      const data = (map as any).get('data') as string;
-      const index = ((map as any).get('index') as string) || '';
+  for (const key of ydoc.share.keys()) {
+    const map = ydoc.getMap(key);
+    const json = typeof map.toJSON === 'function' ? map.toJSON() : {};
+    rawRecords.push({ key, ...json });
 
-      if (type === 'folder' && data) {
-        folders.push({ id, name: data, parentId, index });
-      } else if (type === 'doc' && data && parentId) {
-        docLinks.push({ id, docId: data, folderId: parentId, index });
-      }
+    if (json.$$DELETED || (map as any).get?.('$$DELETED')) continue;
+    const id = json.id || (map as any).get?.('id') || key;
+    const parentId = json.parentId ?? (map as any).get?.('parentId') ?? null;
+    const type = json.type ?? (map as any).get?.('type');
+    const data = json.data ?? (map as any).get?.('data');
+    const index = json.index ?? (map as any).get?.('index') ?? '';
+
+    if (type === 'folder' && data) {
+      folders.push({ id, name: String(data), parentId: parentId ? String(parentId) : null, index: String(index) });
+    } else if (type === 'doc' && data && parentId) {
+      docLinks.push({ id, docId: String(data), folderId: String(parentId), index: String(index) });
     }
   }
-  return { folders, docLinks };
+  return { folders, docLinks, rawRecords };
 }
 
 type WorkspaceDocMetaItem = {
@@ -547,7 +550,7 @@ export class WorkspaceMcpProvider {
             this.models,
             workspaceId
           );
-          const { folders, docLinks } = parseFoldersYDoc(ydoc);
+          const { folders, docLinks, rawRecords } = parseFoldersYDoc(ydoc);
 
           const docCountMap = new Map<string, number>();
           for (const link of docLinks) {
@@ -602,6 +605,7 @@ export class WorkspaceMcpProvider {
                   id === workspaceId
               ),
               shareKeys: Array.from(ydoc.share.keys()),
+              sampleRecords: rawRecords.slice(0, 5),
             };
           }
 
