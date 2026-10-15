@@ -41,6 +41,10 @@ jobs:
 
       - name: Build Backend Server
         run: |
+          touch packages/backend/native/server-native.x64.node
+          touch packages/backend/native/server-native.arm64.node
+          touch packages/backend/native/server-native.armv7.node
+          touch packages/backend/native/server-native.node
           yarn workspace @affine/server build
 
       - name: Set up Docker Buildx

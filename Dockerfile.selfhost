@@ -4,5 +4,6 @@ FROM ghcr.io/toeverything/affine:stable
 # Kopieer de in GitHub Actions gecompileerde frontend naar de static web assets map
 COPY ./packages/frontend/apps/web/dist /app/static
 
-# Kopieer de in GitHub Actions gecompileerde backend server naar de /app/dist map
-COPY ./packages/backend/server/dist /app/dist
+# Kopieer de in GitHub Actions gecompileerde backend server bundle
+COPY ./packages/backend/server/dist/main.js /app/dist/main.js
+COPY ./packages/backend/server/dist/main.js.map /app/dist/main.js.map
