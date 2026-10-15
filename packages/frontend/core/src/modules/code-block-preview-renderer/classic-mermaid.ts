@@ -125,12 +125,12 @@ function enqueueClassicMermaidRender<T>(task: () => Promise<T>): Promise<T> {
 
 function hasCustomMermaidConfig(code: string): boolean {
   const trimmed = code.trim();
-  // Check for YAML frontmatter: starts with --- and has config: or theme:
+  // Check for YAML frontmatter: starts with --- and specifies custom theme/look
   if (trimmed.startsWith('---')) {
     const endFrontmatter = trimmed.indexOf('---', 3);
     if (endFrontmatter !== -1) {
       const frontmatter = trimmed.slice(3, endFrontmatter);
-      if (frontmatter.includes('theme') || frontmatter.includes('config')) {
+      if (frontmatter.includes('theme:') || frontmatter.includes('theme :') || frontmatter.includes('look:')) {
         return true;
       }
     }

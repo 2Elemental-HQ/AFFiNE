@@ -117,6 +117,40 @@ export class MermaidPreview extends SignalWatcher(
       stroke: #475569;
     }
 
+    /* Flowchart edges, paths, lines and markers in dark mode */
+    :host([data-theme='dark']) .mermaid-preview-svg svg .edgePath .path,
+    :host([data-theme='dark']) .mermaid-preview-svg svg path.flowchart-link,
+    [data-theme='dark'] .mermaid-preview-svg svg .edgePath .path,
+    [data-theme='dark'] .mermaid-preview-svg svg path.flowchart-link,
+    html[data-theme='dark'] .mermaid-preview-svg svg .edgePath .path,
+    html[data-theme='dark'] .mermaid-preview-svg svg path.flowchart-link {
+      stroke: #cbd5e1;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg marker path,
+    [data-theme='dark'] .mermaid-preview-svg svg marker path,
+    html[data-theme='dark'] .mermaid-preview-svg svg marker path {
+      fill: #cbd5e1;
+      stroke: #cbd5e1;
+    }
+
+    /* Flowchart edge label background and text in dark mode */
+    :host([data-theme='dark']) .mermaid-preview-svg svg .edgeLabel,
+    [data-theme='dark'] .mermaid-preview-svg svg .edgeLabel,
+    html[data-theme='dark'] .mermaid-preview-svg svg .edgeLabel {
+      color: #f8fafc;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg .edgeLabel rect,
+    [data-theme='dark'] .mermaid-preview-svg svg .edgeLabel rect,
+    html[data-theme='dark'] .mermaid-preview-svg svg .edgeLabel rect,
+    :host([data-theme='dark']) .mermaid-preview-svg svg .labelBkg,
+    [data-theme='dark'] .mermaid-preview-svg svg .labelBkg,
+    html[data-theme='dark'] .mermaid-preview-svg svg .labelBkg {
+      fill: #1e293b;
+      opacity: 0.85;
+    }
+
     :host([data-theme='dark']) .mermaid-preview-svg svg .messageLine0,
     :host([data-theme='dark']) .mermaid-preview-svg svg .messageLine1,
     [data-theme='dark'] .mermaid-preview-svg svg .messageLine0,
