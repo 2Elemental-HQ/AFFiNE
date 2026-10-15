@@ -3,6 +3,7 @@ name: Build and Push Custom AFFiNE Image
 on:
   push:
     branches: [ "canary" ]
+  workflow_dispatch:
 
 permissions:
   contents: read
