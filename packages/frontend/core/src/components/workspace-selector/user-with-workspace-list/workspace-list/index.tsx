@@ -230,18 +230,18 @@ const CloudWorkSpaceList = ({
 
   const handleSignOut = useSignOut();
 
-  const handleSignIn = useAsyncCallback(async () => {
+  const handleAddOrSwitchAccount = useAsyncCallback(async (targetEmail?: string) => {
+    if (accountStatus === 'authenticated') {
+      try {
+        await authService.signOut();
+      } catch (e) {
+        console.error('Failed to sign out before switching account', e);
+      }
+    }
     globalDialogService.open('sign-in', {
       server: server.baseUrl,
     });
-  }, [globalDialogService, server.baseUrl]);
-
-  const handleSwitchAccount = useCallback((_email: string) => {
-    // Open sign-in dialog for switching accounts
-    globalDialogService.open('sign-in', {
-      server: server.baseUrl,
-    });
-  }, [globalDialogService, server.baseUrl]);
+  }, [accountStatus, authService, globalDialogService, server.baseUrl]);
 
   return (
     <>
@@ -252,11 +252,11 @@ const CloudWorkSpaceList = ({
         accountStatus={accountStatus}
         onDeleteServer={handleDeleteServer}
         onSignOut={handleSignOut}
-        onAddAccount={handleSignIn}
-        onSwitchAccount={handleSwitchAccount}
+        onAddAccount={() => handleAddOrSwitchAccount()}
+        onSwitchAccount={(email) => handleAddOrSwitchAccount(email)}
       />
       {accountStatus === 'unauthenticated' ? (
-        <MenuItem key="sign-in" onClick={handleSignIn}>
+        <MenuItem key="sign-in" onClick={() => handleAddOrSwitchAccount()}>
           <div className={styles.signInMenuItemContent}>
             <div className={styles.signInIconWrapper}>
               <AccountIcon />
