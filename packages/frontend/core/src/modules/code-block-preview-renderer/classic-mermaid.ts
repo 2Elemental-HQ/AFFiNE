@@ -150,8 +150,10 @@ function adaptCodeForTheme(code: string, isDark: boolean): string {
   // map it to its dark counterpart for legibility on dark backgrounds.
   let adapted = code
     .replace(/(theme:\s*['"]?)redux-color(['"]?)/g, '$1redux-dark-color$2')
+    .replace(/(theme:\s*['"]?)redux(['"]?)(?!-dark)/g, '$1redux-dark$2')
     .replace(/(theme:\s*['"]?)default(['"]?)/g, '$1dark$2')
-    .replace(/(theme:\s*['"]?)neutral(['"]?)/g, '$1dark$2');
+    .replace(/(theme:\s*['"]?)neutral(['"]?)/g, '$1dark$2')
+    .replace(/(theme:\s*['"]?)forest(['"]?)/g, '$1dark$2');
 
   // If the diagram specifies a light rect background (like rect rgb(245,245,245)),
   // soften it in dark mode so it renders as a dark translucent plane rather than a stark white box.

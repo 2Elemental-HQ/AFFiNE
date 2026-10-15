@@ -11,8 +11,8 @@ const MAX_NESTED_SVG_IMAGE_DEPTH = 2;
 
 const DEFAULT_SVG_SANITIZE_CONFIG: Config = {
   USE_PROFILES: { svg: true, svgFilters: true },
-  ADD_TAGS: ['use', 'style', 'foreignObject'],
-  ADD_ATTR: ['href', 'xlink:href', 'class', 'style', 'id'],
+  ADD_TAGS: ['use', 'style', 'foreignObject', 'image', 'img'],
+  ADD_ATTR: ['href', 'xlink:href', 'src', 'class', 'style', 'id'],
 };
 
 const DEFAULT_FOREIGN_OBJECT_HTML_SANITIZE_CONFIG: Config = {
@@ -182,7 +182,9 @@ function isSafeHref(element: Element, value: string) {
   if (value.startsWith('#')) return true;
   const tagName = element.tagName.toLowerCase();
   if (tagName === 'use') return false;
-  if (tagName === 'image') return SAFE_IMAGE_DATA_URL_PATTERN.test(value);
+  if (tagName === 'image') {
+    return SAFE_IMAGE_DATA_URL_PATTERN.test(value) || isSafeLinkUrl(value);
+  }
   if (tagName === 'a') return isSafeLinkUrl(value);
   return false;
 }
