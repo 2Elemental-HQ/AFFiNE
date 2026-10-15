@@ -162,12 +162,16 @@ export class OIDCProvider extends OAuthProvider implements OnModuleDestroy {
     });
   }
 
+  private get hasConfigCredentials() {
+    return Boolean(this.config?.clientId && this.config?.clientSecret);
+  }
+
   private async validateAndSync(generation: number) {
     if (generation !== this.#validationGeneration) {
       return;
     }
 
-    if (!super.configured) {
+    if (!this.hasConfigCredentials) {
       this.resetState();
       this.#retryScheduler.reset();
       super.setup();
