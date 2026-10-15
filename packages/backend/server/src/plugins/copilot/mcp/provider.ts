@@ -9,6 +9,7 @@ import { DocReader, DocWriter } from '../../../core/doc';
 import { PgWorkspaceDocStorageAdapter } from '../../../core/doc/adapters/workspace';
 import type { DocRecord } from '../../../core/doc/storage';
 import { PermissionAccess } from '../../../core/permission';
+import { parseDocToMarkdownFromDocSnapshot } from '../../../core/utils/blocksuite';
 import { Models } from '../../../models';
 import { DocumentRetrievalService } from '../retrieval/document';
 
@@ -102,14 +103,78 @@ function defineTool<T extends z.ZodTypeAny>(
 
 async function loadFoldersYDoc(
   storage: PgWorkspaceDocStorageAdapter,
+  models: Models,
   workspaceId: string
-): Promise<{ ydoc: Y.Doc; bin: Uint8Array | null }> {
-  const docRecord = await storage.getDoc(workspaceId, 'db$folders');
-  const ydoc = new Y.Doc();
-  if (docRecord?.bin) {
-    Y.applyUpdate(ydoc, docRecord.bin);
+): Promise<{
+  ydoc: Y.Doc;
+  bin: Uint8Array | null;
+  targetDocId: string;
+  allDocIds: string[];
+}> {
+  let allDocIds: string[] = [];
+  try {
+    const docMap = await models.doc.findTimestampsByWorkspaceId(workspaceId);
+    allDocIds = Object.keys(docMap);
+  } catch {
+    // ignore
   }
-  return { ydoc, bin: docRecord?.bin ?? null };
+
+  const candidates = [
+    'db$folders',
+    `db$${workspaceId}$folders`,
+    'db$folder',
+    `db$${workspaceId}$folder`,
+    ...allDocIds.filter(
+      id =>
+        (id.startsWith('db$') || id.includes('$')) &&
+        id.toLowerCase().includes('folder')
+    ),
+  ];
+
+  let selectedDocId = 'db$folders';
+  let selectedRecord: DocRecord | null = null;
+
+  for (const cand of candidates) {
+    if (allDocIds.includes(cand)) {
+      const rec = await storage.getDoc(workspaceId, cand);
+      if (rec?.bin && rec.bin.length > 0) {
+        selectedDocId = cand;
+        selectedRecord = rec;
+        break;
+      }
+    }
+  }
+
+  if (!selectedRecord) {
+    for (const cand of ['db$folders', `db$${workspaceId}$folders`]) {
+      const rec = await storage.getDoc(workspaceId, cand);
+      if (rec?.bin && rec.bin.length > 0) {
+        selectedDocId = cand;
+        selectedRecord = rec;
+        break;
+      }
+    }
+  }
+
+  if (!selectedRecord) {
+    if (allDocIds.some(id => id === `db$${workspaceId}$docProperties`)) {
+      selectedDocId = `db$${workspaceId}$folders`;
+    } else {
+      selectedDocId = 'db$folders';
+    }
+  }
+
+  const ydoc = new Y.Doc({ guid: selectedDocId });
+  if (selectedRecord?.bin) {
+    Y.applyUpdate(ydoc, selectedRecord.bin);
+  }
+
+  return {
+    ydoc,
+    bin: selectedRecord?.bin ?? null,
+    targetDocId: selectedDocId,
+    allDocIds,
+  };
 }
 
 function parseFoldersYDoc(ydoc: Y.Doc) {
@@ -127,13 +192,13 @@ function parseFoldersYDoc(ydoc: Y.Doc) {
   }> = [];
 
   for (const [key, map] of ydoc.share.entries()) {
-    if (map instanceof Y.Map) {
-      if (map.get('$$DELETED')) continue;
-      const id = (map.get('id') as string) || key;
-      const parentId = (map.get('parentId') as string) || null;
-      const type = map.get('type') as string;
-      const data = map.get('data') as string;
-      const index = (map.get('index') as string) || '';
+    if (map && typeof (map as any).get === 'function') {
+      if ((map as any).get('$$DELETED')) continue;
+      const id = ((map as any).get('id') as string) || key;
+      const parentId = ((map as any).get('parentId') as string) || null;
+      const type = (map as any).get('type') as string;
+      const data = (map as any).get('data') as string;
+      const index = ((map as any).get('index') as string) || '';
 
       if (type === 'folder' && data) {
         folders.push({ id, name: data, parentId, index });
@@ -145,10 +210,84 @@ function parseFoldersYDoc(ydoc: Y.Doc) {
   return { folders, docLinks };
 }
 
+type WorkspaceDocMetaItem = {
+  id: string;
+  title: string;
+  trash: boolean;
+  createDate?: number;
+  updatedDate?: number;
+};
+
+async function loadRootDoc(
+  storage: PgWorkspaceDocStorageAdapter,
+  workspaceId: string
+): Promise<{
+  rootYDoc: Y.Doc;
+  pages: WorkspaceDocMetaItem[];
+  pageIdToStorageGuid: Map<string, string>;
+  storageGuidToPageId: Map<string, string>;
+}> {
+  const rootRecord = await storage.getDoc(workspaceId, workspaceId);
+  const rootYDoc = new Y.Doc({ guid: workspaceId });
+  if (rootRecord?.bin) {
+    Y.applyUpdate(rootYDoc, rootRecord.bin);
+  }
+
+  const pages: WorkspaceDocMetaItem[] = [];
+  const metaMap = rootYDoc.getMap('meta');
+  const pagesRaw = metaMap?.get('pages');
+
+  if (pagesRaw && typeof (pagesRaw as any).forEach === 'function') {
+    (pagesRaw as any).forEach((page: any) => {
+      const id = typeof page?.get === 'function' ? page.get('id') : page?.id;
+      const title =
+        typeof page?.get === 'function' ? page.get('title') : page?.title;
+      const trash =
+        typeof page?.get === 'function' ? page.get('trash') : page?.trash;
+      const createDate =
+        typeof page?.get === 'function'
+          ? page.get('createDate')
+          : page?.createDate;
+      const updatedDate =
+        typeof page?.get === 'function'
+          ? page.get('updatedDate')
+          : page?.updatedDate;
+      if (id) {
+        pages.push({
+          id: String(id),
+          title:
+            typeof title === 'string' && title.trim() ? title : 'Untitled',
+          trash: Boolean(trash),
+          createDate: typeof createDate === 'number' ? createDate : undefined,
+          updatedDate:
+            typeof updatedDate === 'number' ? updatedDate : undefined,
+        });
+      }
+    });
+  }
+
+  const pageIdToStorageGuid = new Map<string, string>();
+  const storageGuidToPageId = new Map<string, string>();
+
+  const spaces = rootYDoc.getMap('spaces');
+  if (spaces && typeof (spaces as any).get === 'function') {
+    for (const p of pages) {
+      const subdoc = (spaces as any).get(p.id);
+      if (subdoc && typeof subdoc === 'object' && subdoc.guid) {
+        pageIdToStorageGuid.set(p.id, subdoc.guid);
+        storageGuidToPageId.set(subdoc.guid, p.id);
+      }
+    }
+  }
+
+  return { rootYDoc, pages, pageIdToStorageGuid, storageGuidToPageId };
+}
+
 async function commitFoldersUpdate(
   storage: PgWorkspaceDocStorageAdapter,
   event: EventBus,
   workspaceId: string,
+  targetDocId: string,
   ydoc: Y.Doc,
   originalBin: Uint8Array | null,
   userId: string
@@ -161,14 +300,14 @@ async function commitFoldersUpdate(
 
   const timestamp = await storage.pushDocUpdates(
     workspaceId,
-    'db$folders',
+    targetDocId,
     [diff],
     userId
   );
   event.emit('doc.updates.pushed', {
     spaceType: 'workspace',
     spaceId: workspaceId,
-    docId: 'db$folders',
+    docId: targetDocId,
     updates: [diff],
     timestamp,
     editor: userId,
@@ -182,8 +321,12 @@ function linkDocToFolderInYDoc(
 ) {
   let existingKey: string | null = null;
   for (const [key, map] of ydoc.share.entries()) {
-    if (map instanceof Y.Map && !map.get('$$DELETED')) {
-      if (map.get('type') === 'doc' && map.get('data') === docId) {
+    if (map && typeof (map as any).get === 'function') {
+      if ((map as any).get('$$DELETED')) continue;
+      if (
+        (map as any).get('type') === 'doc' &&
+        (map as any).get('data') === docId
+      ) {
         existingKey = key;
         break;
       }
@@ -250,17 +393,71 @@ export class WorkspaceMcpProvider {
         const abortedAfterPermission = abortIfNeeded(options.signal);
         if (abortedAfterPermission) return abortedAfterPermission;
 
-        const content = await this.reader.getDocMarkdown(
-          workspaceId,
-          docId,
-          false
-        );
-        if (!content) return notFoundError;
+        let docMarkdown: string | null = null;
+
+        // 1. Try reading directly via reader
+        try {
+          const content = await this.reader.getDocMarkdown(
+            workspaceId,
+            docId,
+            false
+          );
+          if (content?.markdown) {
+            docMarkdown = content.markdown;
+          }
+        } catch {
+          // ignore
+        }
+
+        // 2. Check rootDoc ID mapping if not found
+        if (!docMarkdown) {
+          try {
+            const { pageIdToStorageGuid, storageGuidToPageId } =
+              await loadRootDoc(this.storage, workspaceId);
+            const alternateId =
+              pageIdToStorageGuid.get(docId) ||
+              storageGuidToPageId.get(docId);
+            if (alternateId && alternateId !== docId) {
+              const content = await this.reader.getDocMarkdown(
+                workspaceId,
+                alternateId,
+                false
+              );
+              if (content?.markdown) {
+                docMarkdown = content.markdown;
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        // 3. Fallback to direct storage reading & parsing
+        if (!docMarkdown) {
+          try {
+            const docRecord = await this.storage.getDoc(workspaceId, docId);
+            if (docRecord?.bin) {
+              const res = parseDocToMarkdownFromDocSnapshot(
+                workspaceId,
+                docId,
+                docRecord.bin,
+                false
+              );
+              if (res?.markdown) {
+                docMarkdown = res.markdown;
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        if (!docMarkdown) return notFoundError;
 
         const abortedAfterRead = abortIfNeeded(options.signal);
         if (abortedAfterRead) return abortedAfterRead;
 
-        return toolText(content.markdown);
+        return toolText(docMarkdown);
       },
     });
 
@@ -330,7 +527,11 @@ export class WorkspaceMcpProvider {
         if (aborted) return aborted;
 
         try {
-          const { ydoc } = await loadFoldersYDoc(this.storage, workspaceId);
+          const { ydoc, targetDocId, allDocIds } = await loadFoldersYDoc(
+            this.storage,
+            this.models,
+            workspaceId
+          );
           const { folders, docLinks } = parseFoldersYDoc(ydoc);
 
           const docCountMap = new Map<string, number>();
@@ -370,17 +571,26 @@ export class WorkspaceMcpProvider {
             }
           }
 
-          return toolText(
-            JSON.stringify(
-              {
-                totalFolders: folders.length,
-                totalLinkedDocuments: docLinks.length,
-                folders: rootFolders,
-              },
-              null,
-              2
-            )
-          );
+          const responseObj: Record<string, any> = {
+            totalFolders: folders.length,
+            totalLinkedDocuments: docLinks.length,
+            folders: rootFolders,
+          };
+
+          if (folders.length === 0) {
+            responseObj.debug = {
+              activeFoldersDocId: targetDocId,
+              existingFolderAndDbDocIds: allDocIds.filter(
+                id =>
+                  id.startsWith('db$') ||
+                  id.includes('folder') ||
+                  id === workspaceId
+              ),
+              shareKeys: Array.from(ydoc.share.keys()),
+            };
+          }
+
+          return toolText(JSON.stringify(responseObj, null, 2));
         } catch (error) {
           return toolError(
             `Failed to list folders: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -426,130 +636,80 @@ export class WorkspaceMcpProvider {
         if (aborted) return aborted;
 
         try {
-          const { ydoc } = await loadFoldersYDoc(this.storage, workspaceId);
+          const [{ ydoc }, rootInfo] = await Promise.all([
+            loadFoldersYDoc(this.storage, this.models, workspaceId),
+            loadRootDoc(this.storage, workspaceId),
+          ]);
           const { folders, docLinks } = parseFoldersYDoc(ydoc);
-          const folderMap = new Map(folders.map(f => [f.id, f.name]));
+          const folderNameMap = new Map(folders.map(f => [f.id, f.name]));
 
-          // Filter by specific folder
-          if (folderId && folderId !== 'root' && folderId !== 'all') {
-            const folderName = folderMap.get(folderId);
-            if (!folderName) {
-              return toolError(`Folder with id "${folderId}" not found.`);
-            }
-
-            const targetLinks = docLinks.filter(l => l.folderId === folderId);
-            const pagedLinks = targetLinks.slice(offset, offset + limit);
-            const docIds = pagedLinks.map(l => l.docId);
-
-            const metas = await this.models.doc.findMetas(
-              docIds.map(docId => ({ workspaceId, docId })),
-              { select: { title: true, createdAt: true, updatedAt: true } }
-            );
-            const metaMap = new Map(
-              metas
-                .filter((m): m is NonNullable<typeof m> => m !== null)
-                .map(m => [m.docId, m])
-            );
-
-            const documents = docIds.map(id => {
-              const meta = metaMap.get(id);
-              return {
-                docId: id,
-                title: meta?.title ?? 'Untitled',
-                folderId,
-                folderName,
-                createdAt: meta?.createdAt,
-                updatedAt: meta?.updatedAt,
-              };
-            });
-
-            return toolText(
-              JSON.stringify(
-                {
-                  folderId,
-                  folderName,
-                  totalInFolder: targetLinks.length,
-                  offset,
-                  limit,
-                  documents,
-                },
-                null,
-                2
-              )
-            );
-          }
-
-          // Documents not in any folder ("root")
-          if (folderId === 'root') {
-            const assignedDocIds = new Set(docLinks.map(l => l.docId));
-            const allDocs = await this.models.doc.paginateDocInfo(workspaceId, {
-              skip: 0,
-              take: 1000,
-            });
-            const unorganized = allDocs.filter(
-              d => !assignedDocIds.has(d.docId)
-            );
-            const paged = unorganized.slice(offset, offset + limit);
-
-            return toolText(
-              JSON.stringify(
-                {
-                  folderId: 'root',
-                  totalInRoot: unorganized.length,
-                  offset,
-                  limit,
-                  documents: paged.map(d => ({
-                    docId: d.docId,
-                    title: d.title ?? 'Untitled',
-                    createdAt: d.createdAt,
-                    updatedAt: d.updatedAt,
-                  })),
-                },
-                null,
-                2
-              )
-            );
-          }
-
-          // All documents with folder annotations
-          const allDocs = await this.models.doc.paginateDocInfo(workspaceId, {
-            skip: offset,
-            take: limit,
-          });
-
+          // Map docId -> { folderId, folderName }
           const docToFolder = new Map<
             string,
             { folderId: string; folderName: string }
           >();
-          for (const l of docLinks) {
-            const name = folderMap.get(l.folderId);
-            if (name) {
-              docToFolder.set(l.docId, {
-                folderId: l.folderId,
-                folderName: name,
+          for (const link of docLinks) {
+            const folderName =
+              folderNameMap.get(link.folderId) ?? 'Unknown Folder';
+            docToFolder.set(link.docId, {
+              folderId: link.folderId,
+              folderName,
+            });
+            const altId =
+              rootInfo.pageIdToStorageGuid.get(link.docId) ||
+              rootInfo.storageGuidToPageId.get(link.docId);
+            if (altId) {
+              docToFolder.set(altId, {
+                folderId: link.folderId,
+                folderName,
               });
             }
           }
 
-          const documents = allDocs.map(d => {
-            const folder = docToFolder.get(d.docId);
-            return {
-              docId: d.docId,
-              title: d.title ?? 'Untitled',
-              folderId: folder?.folderId ?? null,
-              folderName: folder?.folderName ?? null,
-              createdAt: d.createdAt,
-              updatedAt: d.updatedAt,
-            };
-          });
+          // Build master document list from rootDoc pages (excluding trash)
+          const allDocs = rootInfo.pages
+            .filter(p => !p.trash)
+            .map(p => {
+              const folderInfo =
+                docToFolder.get(p.id) ||
+                (rootInfo.pageIdToStorageGuid.has(p.id)
+                  ? docToFolder.get(rootInfo.pageIdToStorageGuid.get(p.id)!)
+                  : undefined);
+              return {
+                docId: p.id,
+                title: p.title,
+                folderId: folderInfo?.folderId ?? null,
+                folderName: folderInfo?.folderName ?? null,
+                createdAt: p.createDate
+                  ? new Date(p.createDate).toISOString()
+                  : null,
+                updatedAt: p.updatedDate
+                  ? new Date(p.updatedDate).toISOString()
+                  : null,
+              };
+            });
+
+          // Filter by folderId
+          let filtered = allDocs;
+          if (folderId && folderId !== 'all') {
+            if (folderId === 'root') {
+              filtered = allDocs.filter(d => !d.folderId);
+            } else {
+              filtered = allDocs.filter(d => d.folderId === folderId);
+            }
+          }
+
+          const paged = filtered.slice(offset, offset + limit);
 
           return toolText(
             JSON.stringify(
               {
+                total: filtered.length,
+                totalAllDocuments: allDocs.length,
                 offset,
                 limit,
-                returned: documents.length,
-                documents,
+                filter: folderId ?? 'all',
+                documents: paged,
               },
               null,
               2
@@ -600,8 +760,9 @@ export class WorkspaceMcpProvider {
             const aborted = abortIfNeeded(options.signal);
             if (aborted) return aborted;
 
-            const { ydoc, bin } = await loadFoldersYDoc(
+            const { ydoc, bin, targetDocId } = await loadFoldersYDoc(
               this.storage,
+              this.models,
               workspaceId
             );
 
@@ -628,6 +789,7 @@ export class WorkspaceMcpProvider {
               this.storage,
               this.event,
               workspaceId,
+              targetDocId,
               ydoc,
               bin,
               userId
@@ -686,8 +848,9 @@ export class WorkspaceMcpProvider {
             const aborted = abortIfNeeded(options.signal);
             if (aborted) return aborted;
 
-            const { ydoc, bin } = await loadFoldersYDoc(
+            const { ydoc, bin, targetDocId } = await loadFoldersYDoc(
               this.storage,
+              this.models,
               workspaceId
             );
 
@@ -707,6 +870,7 @@ export class WorkspaceMcpProvider {
               this.storage,
               this.event,
               workspaceId,
+              targetDocId,
               ydoc,
               bin,
               userId
@@ -784,8 +948,9 @@ export class WorkspaceMcpProvider {
             );
 
             if (folderId) {
-              const { ydoc, bin } = await loadFoldersYDoc(
+              const { ydoc, bin, targetDocId } = await loadFoldersYDoc(
                 this.storage,
+                this.models,
                 workspaceId
               );
               linkDocToFolderInYDoc(ydoc, result.docId, folderId);
@@ -793,6 +958,7 @@ export class WorkspaceMcpProvider {
                 this.storage,
                 this.event,
                 workspaceId,
+                targetDocId,
                 ydoc,
                 bin,
                 userId
