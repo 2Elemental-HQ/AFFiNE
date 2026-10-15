@@ -558,7 +558,11 @@ export class OIDCProvider extends OAuthProvider implements OnModuleDestroy {
       });
     }
 
-    if (emailVerified === false) {
+    const ignoreEmailVerified =
+      process.env.AFFINE_OIDC_IGNORE_EMAIL_VERIFIED === 'true' ||
+      args.claim_email_verified === 'none';
+
+    if (emailVerified === false && !ignoreEmailVerified) {
       throw new InvalidOauthResponse({
         reason: 'Email for this account is not verified',
       });
