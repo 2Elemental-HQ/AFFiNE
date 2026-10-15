@@ -91,6 +91,32 @@ export class OIDCProvider extends OAuthProvider implements OnModuleDestroy {
     return true;
   }
 
+  override get config(): OAuthOIDCProviderConfig {
+    const baseConfig = (super.config as OAuthOIDCProviderConfig) || {};
+    const envArgs = {
+      ...(baseConfig.args || {}),
+      ...(process.env.AFFINE_OIDC_SCOPE ? { scope: process.env.AFFINE_OIDC_SCOPE } : {}),
+      ...(process.env.AFFINE_OIDC_CLAIM_ID ? { claim_id: process.env.AFFINE_OIDC_CLAIM_ID } : {}),
+      ...(process.env.AFFINE_OIDC_CLAIM_EMAIL ? { claim_email: process.env.AFFINE_OIDC_CLAIM_EMAIL } : {}),
+      ...(process.env.AFFINE_OIDC_CLAIM_NAME ? { claim_name: process.env.AFFINE_OIDC_CLAIM_NAME } : {}),
+      ...(process.env.AFFINE_OIDC_CLAIM_EMAIL_VERIFIED
+        ? { claim_email_verified: process.env.AFFINE_OIDC_CLAIM_EMAIL_VERIFIED }
+        : {}),
+    };
+
+    return {
+      ...baseConfig,
+      clientId: process.env.AFFINE_OIDC_CLIENT_ID || baseConfig.clientId || '',
+      clientSecret: process.env.AFFINE_OIDC_CLIENT_SECRET || baseConfig.clientSecret || '',
+      issuer: process.env.AFFINE_OIDC_ISSUER || baseConfig.issuer || '',
+      allowPrivateNetwork:
+        process.env.AFFINE_OIDC_ALLOW_PRIVATE_NETWORK !== undefined
+          ? process.env.AFFINE_OIDC_ALLOW_PRIVATE_NETWORK === 'true'
+          : Boolean(baseConfig.allowPrivateNetwork),
+      args: envArgs,
+    };
+  }
+
   protected override fetchOptions(rawUrl: string | URL): SafeFetchOptions {
     const options = super.fetchOptions(rawUrl);
     const config = this.config as OAuthOIDCProviderConfig;
