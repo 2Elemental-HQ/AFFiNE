@@ -101,6 +101,8 @@ function defineTool<T extends z.ZodTypeAny>(
   };
 }
 
+const folderDocIdCache = new Map<string, string>();
+
 async function loadFoldersYDoc(
   storage: PgWorkspaceDocStorageAdapter,
   models: Models,
@@ -111,6 +113,36 @@ async function loadFoldersYDoc(
   targetDocId: string;
   allDocIds: string[];
 }> {
+  // 1. Check in-memory cache first
+  const cachedDocId = folderDocIdCache.get(workspaceId);
+  if (cachedDocId) {
+    const rec = await storage.getDoc(workspaceId, cachedDocId);
+    if (rec?.bin && rec.bin.length > 0) {
+      const ydoc = new Y.Doc({ guid: cachedDocId });
+      Y.applyUpdate(ydoc, rec.bin);
+      return { ydoc, bin: rec.bin, targetDocId: cachedDocId, allDocIds: [] };
+    }
+  }
+
+  // 2. Direct O(1) indexed point lookups on known standard candidates
+  const fixedCandidates = [
+    'db$folders',
+    `db$${workspaceId}$folders`,
+    'db$folder',
+    `db$${workspaceId}$folder`,
+  ];
+
+  for (const cand of fixedCandidates) {
+    const rec = await storage.getDoc(workspaceId, cand);
+    if (rec?.bin && rec.bin.length > 0) {
+      folderDocIdCache.set(workspaceId, cand);
+      const ydoc = new Y.Doc({ guid: cand });
+      Y.applyUpdate(ydoc, rec.bin);
+      return { ydoc, bin: rec.bin, targetDocId: cand, allDocIds: [] };
+    }
+  }
+
+  // 3. Fallback only if no standard folder table was found: check DB doc timestamps
   let allDocIds: string[] = [];
   try {
     const docMap = await models.doc.findTimestampsByWorkspaceId(workspaceId);
@@ -119,49 +151,32 @@ async function loadFoldersYDoc(
     // ignore
   }
 
-  const candidates = [
-    'db$folders',
-    `db$${workspaceId}$folders`,
-    'db$folder',
-    `db$${workspaceId}$folder`,
-    ...allDocIds.filter(
-      id =>
-        (id.startsWith('db$') || id.includes('$')) &&
-        id.toLowerCase().includes('folder')
-    ),
-  ];
+  const extraCandidates = allDocIds.filter(
+    id =>
+      (id.startsWith('db$') || id.includes('$')) &&
+      id.toLowerCase().includes('folder')
+  );
 
   let selectedDocId = 'db$folders';
   let selectedRecord: DocRecord | null = null;
 
-  for (const cand of candidates) {
-    if (allDocIds.includes(cand)) {
-      const rec = await storage.getDoc(workspaceId, cand);
-      if (rec?.bin && rec.bin.length > 0) {
-        selectedDocId = cand;
-        selectedRecord = rec;
-        break;
-      }
+  for (const cand of extraCandidates) {
+    const rec = await storage.getDoc(workspaceId, cand);
+    if (rec?.bin && rec.bin.length > 0) {
+      selectedDocId = cand;
+      selectedRecord = rec;
+      folderDocIdCache.set(workspaceId, cand);
+      break;
     }
   }
 
   if (!selectedRecord) {
-    for (const cand of ['db$folders', `db$${workspaceId}$folders`]) {
-      const rec = await storage.getDoc(workspaceId, cand);
-      if (rec?.bin && rec.bin.length > 0) {
-        selectedDocId = cand;
-        selectedRecord = rec;
-        break;
-      }
-    }
-  }
-
-  if (!selectedRecord) {
-    if (allDocIds.some(id => id === `db$${workspaceId}$docProperties`)) {
-      selectedDocId = `db$${workspaceId}$folders`;
-    } else {
-      selectedDocId = 'db$folders';
-    }
+    selectedDocId = allDocIds.some(
+      id => id === `db$${workspaceId}$docProperties`
+    )
+      ? `db$${workspaceId}$folders`
+      : 'db$folders';
+    folderDocIdCache.set(workspaceId, selectedDocId);
   }
 
   const ydoc = new Y.Doc({ guid: selectedDocId });
