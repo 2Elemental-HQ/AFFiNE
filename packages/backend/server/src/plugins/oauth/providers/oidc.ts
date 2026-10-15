@@ -102,6 +102,7 @@ export class OIDCProvider extends OAuthProvider implements OnModuleDestroy {
       ...(process.env.AFFINE_OIDC_CLAIM_EMAIL_VERIFIED
         ? { claim_email_verified: process.env.AFFINE_OIDC_CLAIM_EMAIL_VERIFIED }
         : {}),
+      ...(process.env.AFFINE_OIDC_PROMPT ? { prompt: process.env.AFFINE_OIDC_PROMPT } : {}),
     };
 
     return {
