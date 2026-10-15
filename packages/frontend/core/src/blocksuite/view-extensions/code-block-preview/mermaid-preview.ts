@@ -111,7 +111,8 @@ export class MermaidPreview extends SignalWatcher(
 
     /* Dark mode enhancements for clusters and sequence diagrams */
     :host([data-theme='dark']) .mermaid-preview-svg svg .cluster rect,
-    [data-theme='dark'] .mermaid-preview-svg svg .cluster rect {
+    [data-theme='dark'] .mermaid-preview-svg svg .cluster rect,
+    html[data-theme='dark'] .mermaid-preview-svg svg .cluster rect {
       fill: #1e293b;
       stroke: #475569;
     }
@@ -119,12 +120,28 @@ export class MermaidPreview extends SignalWatcher(
     :host([data-theme='dark']) .mermaid-preview-svg svg .messageLine0,
     :host([data-theme='dark']) .mermaid-preview-svg svg .messageLine1,
     [data-theme='dark'] .mermaid-preview-svg svg .messageLine0,
-    [data-theme='dark'] .mermaid-preview-svg svg .messageLine1 {
+    [data-theme='dark'] .mermaid-preview-svg svg .messageLine1,
+    html[data-theme='dark'] .mermaid-preview-svg svg .messageLine0,
+    html[data-theme='dark'] .mermaid-preview-svg svg .messageLine1 {
+      stroke: #93c5fd;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg .line,
+    [data-theme='dark'] .mermaid-preview-svg svg .line,
+    html[data-theme='dark'] .mermaid-preview-svg svg .line {
+      stroke: #64748b;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg #arrowhead path,
+    [data-theme='dark'] .mermaid-preview-svg svg #arrowhead path,
+    html[data-theme='dark'] .mermaid-preview-svg svg #arrowhead path {
+      fill: #93c5fd;
       stroke: #93c5fd;
     }
 
     :host([data-theme='dark']) .mermaid-preview-svg svg .messageText,
-    [data-theme='dark'] .mermaid-preview-svg svg .messageText {
+    [data-theme='dark'] .mermaid-preview-svg svg .messageText,
+    html[data-theme='dark'] .mermaid-preview-svg svg .messageText {
       fill: #f8fafc;
       stroke: none;
     }

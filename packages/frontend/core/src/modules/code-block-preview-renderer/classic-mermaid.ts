@@ -142,12 +142,26 @@ function hasCustomMermaidConfig(code: string): boolean {
   return false;
 }
 
+function adaptCodeForTheme(code: string, isDark: boolean): string {
+  if (!isDark) {
+    return code;
+  }
+  // If the diagram explicitly specifies a light-only theme in frontmatter or directive,
+  // map it to its dark counterpart for legibility on dark backgrounds.
+  return code
+    .replace(/(theme:\s*['"]?)redux-color(['"]?)/g, '$1redux-dark-color$2')
+    .replace(/(theme:\s*['"]?)default(['"]?)/g, '$1dark$2')
+    .replace(/(theme:\s*['"]?)neutral(['"]?)/g, '$1dark$2');
+}
+
 export async function renderClassicMermaidSvg(
   request: MermaidRenderRequest
 ): Promise<MermaidRenderResult> {
   return enqueueClassicMermaidRender(async () => {
     const mermaid = await loadMermaid();
-    const hasCustomConfig = hasCustomMermaidConfig(request.code);
+    const isDark = request.options?.theme === 'dark';
+    const code = adaptCodeForTheme(request.code, isDark);
+    const hasCustomConfig = hasCustomMermaidConfig(code);
 
     const baseConfig = createClassicMermaidConfig(request.options);
     if (hasCustomConfig) {
@@ -159,7 +173,7 @@ export async function renderClassicMermaidSvg(
 
     mermaid.initialize(baseConfig);
 
-    const { svg } = await mermaid.render(createDiagramId(), request.code);
+    const { svg } = await mermaid.render(createDiagramId(), code);
     return { svg };
   });
 }
