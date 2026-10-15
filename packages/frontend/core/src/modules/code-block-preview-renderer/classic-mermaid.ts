@@ -31,8 +31,8 @@ function getThemeVariables(theme: MermaidRenderTheme | undefined) {
         nodeBorder: '#64748b',
         nodeTextColor: '#f8fafc',
         textColor: '#f8fafc',
-        lineColor: '#93c5fd',
-        arrowheadColor: '#93c5fd',
+        lineColor: '#cbd5e1',
+        arrowheadColor: '#cbd5e1',
         edgeLabelBackground: '#1e293b',
         primaryColor: '#2a2b2d',
         primaryTextColor: '#f8fafc',
@@ -49,7 +49,7 @@ function getThemeVariables(theme: MermaidRenderTheme | undefined) {
         labelBoxBorderColor: '#64748b',
         labelTextColor: '#f8fafc',
         loopTextColor: '#f8fafc',
-        signalColor: '#93c5fd',
+        signalColor: '#cbd5e1',
         signalTextColor: '#f8fafc',
         actorLineColor: '#94a3b8',
       }
@@ -148,10 +148,19 @@ function adaptCodeForTheme(code: string, isDark: boolean): string {
   }
   // If the diagram explicitly specifies a light-only theme in frontmatter or directive,
   // map it to its dark counterpart for legibility on dark backgrounds.
-  return code
+  let adapted = code
     .replace(/(theme:\s*['"]?)redux-color(['"]?)/g, '$1redux-dark-color$2')
     .replace(/(theme:\s*['"]?)default(['"]?)/g, '$1dark$2')
     .replace(/(theme:\s*['"]?)neutral(['"]?)/g, '$1dark$2');
+
+  // If the diagram specifies a light rect background (like rect rgb(245,245,245)),
+  // soften it in dark mode so it renders as a dark translucent plane rather than a stark white box.
+  adapted = adapted.replace(
+    /rect\s+rgb\(\s*(24\d|25[0-5])\s*,\s*(24\d|25[0-5])\s*,\s*(24\d|25[0-5])\s*\)/gi,
+    'rect rgba(255, 255, 255, 0.05)'
+  );
+
+  return adapted;
 }
 
 export async function renderClassicMermaidSvg(

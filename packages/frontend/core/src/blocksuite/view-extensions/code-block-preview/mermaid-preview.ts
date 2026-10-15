@@ -123,20 +123,20 @@ export class MermaidPreview extends SignalWatcher(
     [data-theme='dark'] .mermaid-preview-svg svg .messageLine1,
     html[data-theme='dark'] .mermaid-preview-svg svg .messageLine0,
     html[data-theme='dark'] .mermaid-preview-svg svg .messageLine1 {
-      stroke: #93c5fd;
+      stroke: #cbd5e1;
     }
 
     :host([data-theme='dark']) .mermaid-preview-svg svg .line,
     [data-theme='dark'] .mermaid-preview-svg svg .line,
     html[data-theme='dark'] .mermaid-preview-svg svg .line {
-      stroke: #64748b;
+      stroke: #94a3b8;
     }
 
     :host([data-theme='dark']) .mermaid-preview-svg svg #arrowhead path,
     [data-theme='dark'] .mermaid-preview-svg svg #arrowhead path,
     html[data-theme='dark'] .mermaid-preview-svg svg #arrowhead path {
-      fill: #93c5fd;
-      stroke: #93c5fd;
+      fill: #cbd5e1;
+      stroke: #cbd5e1;
     }
 
     :host([data-theme='dark']) .mermaid-preview-svg svg .messageText,
@@ -144,6 +144,21 @@ export class MermaidPreview extends SignalWatcher(
     html[data-theme='dark'] .mermaid-preview-svg svg .messageText {
       fill: #f8fafc;
       stroke: none;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg rect.background,
+    [data-theme='dark'] .mermaid-preview-svg svg rect.background,
+    html[data-theme='dark'] .mermaid-preview-svg svg rect.background {
+      fill: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    :host([data-theme='dark']) .mermaid-preview-svg svg .labelText,
+    :host([data-theme='dark']) .mermaid-preview-svg svg .loopText,
+    [data-theme='dark'] .mermaid-preview-svg svg .labelText,
+    [data-theme='dark'] .mermaid-preview-svg svg .loopText,
+    html[data-theme='dark'] .mermaid-preview-svg svg .labelText,
+    html[data-theme='dark'] .mermaid-preview-svg svg .loopText {
+      fill: #f8fafc !important;
     }
 
     .mermaid-controls {
@@ -291,7 +306,7 @@ export class MermaidPreview extends SignalWatcher(
     const backgroundPrimary = getVar('--affine-background-primary-color', isDark ? '#2a2b2d' : '#ffffff');
     const backgroundSecondary = getVar('--affine-background-secondary-color', isDark ? '#1e293b' : '#f9fafb');
     const brandColor = isDark
-      ? '#93c5fd'
+      ? '#cbd5e1'
       : getVar('--affine-brand-color', '#3b82f6');
 
     return {
