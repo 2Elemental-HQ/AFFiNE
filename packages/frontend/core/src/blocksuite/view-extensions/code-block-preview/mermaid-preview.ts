@@ -87,7 +87,7 @@ export class MermaidPreview extends SignalWatcher(
       transform-origin: center;
     }
 
-    /* Ensure text in SVG and foreignObject is legible and adopts theme colors */
+    /* Ensure text in SVG and foreignObject is legible and adopts theme colors by default */
     .mermaid-preview-svg svg text {
       font-family: 'IBM Plex Mono', monospace;
     }
@@ -99,8 +99,14 @@ export class MermaidPreview extends SignalWatcher(
     .mermaid-preview-svg foreignObject div,
     .mermaid-preview-svg foreignObject span,
     .mermaid-preview-svg foreignObject p {
-      color: ${unsafeCSSVarV2('text/primary')};
       font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* Set default text color only if not explicitly colored by node classDef/style */
+    .mermaid-preview-svg:not([data-theme='dark']) foreignObject div,
+    .mermaid-preview-svg:not([data-theme='dark']) foreignObject span,
+    .mermaid-preview-svg:not([data-theme='dark']) foreignObject p {
+      color: inherit;
     }
 
     /* Fallback edge styling if unstyled */

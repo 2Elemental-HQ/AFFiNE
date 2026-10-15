@@ -160,6 +160,18 @@ function adaptCodeForTheme(code: string, isDark: boolean): string {
     'rect rgba(255, 255, 255, 0.05)'
   );
 
+  // If the diagram has classDef with near-white fill without dark text (or default dark text),
+  // adapt classDef in dark mode so nodes with light fills (like #fff, #eef, #efe) have dark text: color:#111
+  adapted = adapted.replace(
+    /(classDef\s+\w+\s+[^;\n]*fill:\s*(?:#fff|#eef|#efe|#f\w\w|white|rgba?\([^)]+\))[^;\n]*)(;|\n|$)/gi,
+    (match, p1, p2) => {
+      if (!p1.includes('color:')) {
+        return `${p1},color:#111827${p2}`;
+      }
+      return match;
+    }
+  );
+
   return adapted;
 }
 
