@@ -41,6 +41,9 @@ export abstract class OAuthProvider {
   abstract getAuthUrl(state: string, clientNonce?: string): string;
   abstract getToken(code: string, state: OAuthState): Promise<Tokens>;
   abstract getUser(tokens: Tokens, state: OAuthState): Promise<OAuthAccount>;
+  getEndSessionUrl?(_postLogoutRedirectUri?: string): string | null {
+    return null;
+  }
 
   protected readonly logger = new Logger(this.constructor.name);
   @Inject() private readonly factory!: OAuthProviderFactory;

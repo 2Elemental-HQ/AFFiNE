@@ -231,6 +231,17 @@ const CloudWorkSpaceList = ({
   const handleSignOut = useSignOut();
 
   const handleAddOrSwitchAccount = useAsyncCallback(async (targetEmail?: string) => {
+    let endSessionUrl: string | null = null;
+    try {
+      const res = await fetch(`${server.baseUrl}/oauth/end-session`);
+      if (res.ok) {
+        const data = await res.json();
+        endSessionUrl = data.endSessionUrl;
+      }
+    } catch {
+      /* ignore */
+    }
+
     if (accountStatus === 'authenticated') {
       try {
         await authService.signOut();
@@ -238,6 +249,12 @@ const CloudWorkSpaceList = ({
         console.error('Failed to sign out before switching account', e);
       }
     }
+
+    if (endSessionUrl) {
+      window.location.href = endSessionUrl;
+      return;
+    }
+
     globalDialogService.open('sign-in', {
       server: server.baseUrl,
     });

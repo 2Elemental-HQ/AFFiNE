@@ -61,6 +61,7 @@ const OIDCConfigurationSchema = z.object({
   userinfo_endpoint: z.string().url(),
   issuer: z.string().url(),
   jwks_uri: z.string().url(),
+  end_session_endpoint: z.string().url().optional(),
 });
 
 type OIDCConfiguration = z.infer<typeof OIDCConfigurationSchema>;
@@ -310,6 +311,20 @@ export class OIDCProvider extends OAuthProvider implements OnModuleDestroy {
     return `${this.endpoints.authorization_endpoint}?${this.url.stringify(
       query
     )}`;
+  }
+
+  override getEndSessionUrl(postLogoutRedirectUri?: string): string | null {
+    if (!this.#endpoints?.end_session_endpoint) {
+      return null;
+    }
+    const query: Record<string, string> = {};
+    if (postLogoutRedirectUri) {
+      query.post_logout_redirect_uri = postLogoutRedirectUri;
+    }
+    const queryString = this.url.stringify(query);
+    return queryString
+      ? `${this.#endpoints.end_session_endpoint}?${queryString}`
+      : this.#endpoints.end_session_endpoint;
   }
 
   async getToken(code: string, state: OAuthState): Promise<Tokens> {

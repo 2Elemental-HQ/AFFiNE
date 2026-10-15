@@ -183,4 +183,18 @@ export class OAuthController {
       redirectUri: state.redirectUri,
     });
   }
+
+  @Public()
+  @UseNamedGuard('version')
+  @Get('/end-session')
+  async endSession(@Query('provider') providerName?: string) {
+    const oidcProvider = this.providerFactory.get(
+      (providerName as OAuthProviderName) || OAuthProviderName.OIDC
+    );
+    const endSessionUrl = oidcProvider?.getEndSessionUrl?.(
+      this.url.link('/')
+    );
+    return { endSessionUrl: endSessionUrl ?? null };
+  }
 }
+
