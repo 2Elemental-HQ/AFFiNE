@@ -70,16 +70,31 @@ export const SignInWithEmailStep = ({
   const challenge = useLiveData(captchaService.challenge$);
 
   const loginStatus = useLiveData(authService.session.status$);
+  const currentAccount = useLiveData(authService.session.account$);
+  const [initialAccountId] = useState(() =>
+    authService.session.status$.value === 'authenticated'
+      ? authService.session.account$.value?.id ?? null
+      : null
+  );
 
   useEffect(() => {
-    if (loginStatus === 'authenticated') {
+    if (
+      loginStatus === 'authenticated' &&
+      (!initialAccountId || currentAccount?.id !== initialAccountId)
+    ) {
       notify.success({
         title: t['com.affine.auth.toast.title.signed-in'](),
         message: t['com.affine.auth.toast.message.signed-in'](),
       });
+      onAuthenticated?.(loginStatus);
     }
-    onAuthenticated?.(loginStatus);
-  }, [loginStatus, onAuthenticated, t]);
+  }, [
+    currentAccount?.id,
+    initialAccountId,
+    loginStatus,
+    onAuthenticated,
+    t,
+  ]);
 
   const sendEmail = useAsyncCallback(async () => {
     if (isSending || (!verifyToken && needCaptcha)) return;
