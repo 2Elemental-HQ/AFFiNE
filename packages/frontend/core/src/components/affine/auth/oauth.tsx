@@ -50,6 +50,10 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
   const onContinue = useAsyncCallback(
     async (provider: OAuthProviderType) => {
       track.$.$.auth.signIn({ method: 'oauth', provider });
+      const loginHint =
+        typeof sessionStorage !== 'undefined'
+          ? sessionStorage.getItem('affine:login-hint') ?? undefined
+          : undefined;
 
       const open: () => Promise<void> | void = BUILD_CONFIG.isNative
         ? async () => {
@@ -57,8 +61,13 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
               const scheme = urlService.getClientScheme();
               const options = await auth.oauthPreflight(
                 provider,
-                scheme ?? 'web'
+                scheme ?? 'web',
+                undefined,
+                loginHint
               );
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem('affine:login-hint');
+              }
               urlService.openPopupWindow(options.url);
             } catch (e) {
               notify.error(UserFriendlyError.fromAny(e));
@@ -71,6 +80,10 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
 
             if (redirectUrl) {
               params.set('redirect_uri', redirectUrl);
+            }
+
+            if (loginHint) {
+              params.set('login_hint', loginHint);
             }
 
             params.set('flow', 'redirect');

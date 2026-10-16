@@ -231,9 +231,19 @@ const CloudWorkSpaceList = ({
   const handleSignOut = useSignOut();
 
   const handleAddOrSwitchAccount = useAsyncCallback(async (targetEmail?: string) => {
+    if (typeof sessionStorage !== 'undefined') {
+      if (targetEmail) {
+        sessionStorage.setItem('affine:login-hint', targetEmail);
+      } else {
+        sessionStorage.removeItem('affine:login-hint');
+      }
+    }
+
     let endSessionUrl: string | null = null;
     try {
-      const res = await fetch(`${server.baseUrl}/oauth/end-session`);
+      const res = await fetch(
+        `${server.baseUrl}/api/oauth/end-session?redirect_uri=${encodeURIComponent('/sign-in')}`
+      );
       if (res.ok) {
         const data = await res.json();
         endSessionUrl = data.endSessionUrl;

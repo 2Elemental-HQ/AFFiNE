@@ -64,6 +64,7 @@ export class OAuthController {
       redirect_uri: redirectUri,
       client,
       client_nonce: clientNonce,
+      login_hint: loginHint,
     } = input.data;
 
     const providerName =
@@ -102,6 +103,10 @@ export class OAuthController {
       client,
       provider: unknownProviderName,
     };
+
+    if (loginHint) {
+      statePayload.login_hint = loginHint;
+    }
 
     if (pkce) {
       statePayload.pkce = {
@@ -187,15 +192,19 @@ export class OAuthController {
   }
 
   @Public()
-  @UseNamedGuard('version')
   @Get('/end-session')
-  async endSession(@Query('provider') providerName?: string) {
+  async endSession(
+    @Query('provider') providerName?: string,
+    @Query('redirect_uri') redirectUri?: string
+  ) {
     const oidcProvider = this.providerFactory.get(
       (providerName as OAuthProviderName) || OAuthProviderName.OIDC
     );
-    const endSessionUrl = oidcProvider?.getEndSessionUrl?.(
-      this.url.link('/')
-    );
+    const targetRedirect =
+      redirectUri && this.url.isAllowedRedirectUri(redirectUri)
+        ? this.url.link(redirectUri)
+        : this.url.link('/');
+    const endSessionUrl = oidcProvider?.getEndSessionUrl?.(targetRedirect);
     return { endSessionUrl: endSessionUrl ?? null };
   }
 }

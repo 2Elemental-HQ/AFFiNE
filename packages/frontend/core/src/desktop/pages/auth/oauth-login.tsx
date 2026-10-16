@@ -38,6 +38,7 @@ const oauthParameters = z.object({
   client: supportedClient,
   redirectUri: z.string().optional().nullable(),
   flow: z.string().optional().nullable(),
+  loginHint: z.string().optional().nullable(),
 });
 
 interface LoaderData {
@@ -45,6 +46,7 @@ interface LoaderData {
   client: string;
   redirectUri?: string;
   flow: string;
+  loginHint?: string;
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -54,6 +56,11 @@ export const loader: LoaderFunction = async ({ request }) => {
   const client = searchParams.get('client') ?? 'web';
   const redirectUri = searchParams.get('redirect_uri');
   const flow = searchParams.get('flow');
+  const loginHint =
+    searchParams.get('login_hint') ??
+    (typeof sessionStorage !== 'undefined'
+      ? sessionStorage.getItem('affine:login-hint')
+      : null);
 
   // sign out first, web only
   if (client === 'web') {
@@ -69,6 +76,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     client,
     redirectUri,
     flow,
+    loginHint,
   });
 
   if (paramsParseResult.success) {
@@ -77,6 +85,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       client,
       redirectUri,
       flow: resolveOAuthFlowMode(flow),
+      loginHint: loginHint ?? undefined,
     };
   }
 
@@ -93,8 +102,16 @@ export const Component = () => {
 
   useEffect(() => {
     auth
-      .oauthPreflight(data.provider, data.client, data.redirectUri)
+      .oauthPreflight(
+        data.provider,
+        data.client,
+        data.redirectUri,
+        data.loginHint
+      )
       .then(({ url }) => {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('affine:login-hint');
+        }
         // this is the url of oauth provider auth page, can't navigate with react-router
         location.href = attachOAuthFlowToAuthUrl(
           url,

@@ -71,7 +71,12 @@ export const SignInStep = ({
   const authService = useService(AuthService);
   const [isMutating, setIsMutating] = useState(false);
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem('affine:login-hint') ?? '';
+    }
+    return '';
+  });
 
   const [isValidEmail, setIsValidEmail] = useState(true);
 
@@ -175,6 +180,7 @@ export const SignInStep = ({
             className={style.authInput}
             label={t['com.affine.settings.email']()}
             placeholder={t['com.affine.auth.sign.email.placeholder']()}
+            value={email}
             onChange={setEmail}
             error={!isValidEmail}
             errorHint={

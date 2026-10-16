@@ -180,7 +180,8 @@ export class AuthService extends Service {
   async oauthPreflight(
     provider: OAuthProviderType,
     client: string,
-    /** @deprecated*/ redirectUrl?: string
+    /** @deprecated*/ redirectUrl?: string,
+    loginHint?: string
   ): Promise<Record<string, string>> {
     this.assertSupportedServerVersion();
     // OAuth callback requires `client_nonce` for all clients (including web).
@@ -193,6 +194,7 @@ export class AuthService extends Service {
           client,
           redirect_uri: redirectUrl,
           client_nonce: clientNonce,
+          ...(loginHint ? { login_hint: loginHint } : {}),
         }),
         headers: {
           'content-type': 'application/json',

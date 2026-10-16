@@ -40,7 +40,24 @@ export const useSignOut = ({
       );
 
     try {
+      let endSessionUrl: string | null = null;
+      try {
+        const res = await fetch(
+          `${defaultServerService.server.baseUrl}/api/oauth/end-session?redirect_uri=${encodeURIComponent(enableLocalWorkspace ? '/' : '/sign-in')}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          endSessionUrl = data.endSessionUrl;
+        }
+      } catch {
+        /* ignore */
+      }
+
       await authService.signOut();
+      if (endSessionUrl) {
+        window.location.href = endSessionUrl;
+        return;
+      }
       if (enableLocalWorkspace) {
         jumpToIndex();
       } else {
