@@ -24,6 +24,7 @@ import { OAuthAccount, OAuthProvider, Tokens } from './def';
 const StatePayloadSchema = z.object({
   state: z.string().optional(),
   login_hint: z.string().optional(),
+  prompt: z.string().optional(),
   pkce: z
     .object({
       codeChallenge: z.string(),
@@ -306,6 +307,10 @@ export class OIDCProvider extends OAuthProvider implements OnModuleDestroy {
 
     if (parsedState?.login_hint) {
       query.login_hint = parsedState.login_hint;
+    }
+
+    if (parsedState?.prompt) {
+      query.prompt = parsedState.prompt;
     }
 
     if (pkce) {

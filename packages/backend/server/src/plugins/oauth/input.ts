@@ -32,6 +32,12 @@ export const OAuthPreflightBodySchema = z
       .max(512)
       .nullish()
       .transform(value => value ?? undefined),
+    prompt: z
+      .string()
+      .min(1)
+      .max(128)
+      .nullish()
+      .transform(value => value ?? undefined),
   })
   .strict();
 
@@ -57,6 +63,7 @@ export const OAuthStateEnvelopeSchema = z
     client: OAuthClientSchema,
     flow: z.enum(['popup', 'redirect']).optional(),
     login_hint: z.string().optional(),
+    prompt: z.string().optional(),
     pkce: z
       .object({
         codeChallenge: z.string().min(1).max(512),

@@ -65,6 +65,7 @@ export class OAuthController {
       client,
       client_nonce: clientNonce,
       login_hint: loginHint,
+      prompt,
     } = input.data;
 
     const providerName =
@@ -106,6 +107,10 @@ export class OAuthController {
 
     if (loginHint) {
       statePayload.login_hint = loginHint;
+    }
+
+    if (prompt) {
+      statePayload.prompt = prompt;
     }
 
     if (pkce) {

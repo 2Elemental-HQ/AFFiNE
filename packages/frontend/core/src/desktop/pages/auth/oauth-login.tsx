@@ -39,6 +39,7 @@ const oauthParameters = z.object({
   redirectUri: z.string().optional().nullable(),
   flow: z.string().optional().nullable(),
   loginHint: z.string().optional().nullable(),
+  prompt: z.string().optional().nullable(),
 });
 
 interface LoaderData {
@@ -47,6 +48,7 @@ interface LoaderData {
   redirectUri?: string;
   flow: string;
   loginHint?: string;
+  prompt?: string;
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -56,6 +58,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const client = searchParams.get('client') ?? 'web';
   const redirectUri = searchParams.get('redirect_uri');
   const flow = searchParams.get('flow');
+  const prompt = searchParams.get('prompt');
   const loginHint =
     searchParams.get('login_hint') ??
     (typeof sessionStorage !== 'undefined'
@@ -79,6 +82,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     redirectUri,
     flow,
     loginHint,
+    prompt,
   });
 
   if (paramsParseResult.success) {
@@ -88,6 +92,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       redirectUri,
       flow: resolveOAuthFlowMode(flow),
       loginHint: loginHint ?? undefined,
+      prompt: prompt ?? undefined,
     };
   }
 
@@ -108,7 +113,8 @@ export const Component = () => {
         data.provider,
         data.client,
         data.redirectUri,
-        data.loginHint
+        data.loginHint,
+        data.prompt
       )
       .then(({ url }) => {
         if (typeof sessionStorage !== 'undefined') {

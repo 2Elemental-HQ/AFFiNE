@@ -181,7 +181,8 @@ export class AuthService extends Service {
     provider: OAuthProviderType,
     client: string,
     /** @deprecated*/ redirectUrl?: string,
-    loginHint?: string
+    loginHint?: string,
+    prompt?: string
   ): Promise<Record<string, string>> {
     this.assertSupportedServerVersion();
     // OAuth callback requires `client_nonce` for all clients (including web).
@@ -195,6 +196,7 @@ export class AuthService extends Service {
           redirect_uri: redirectUrl,
           client_nonce: clientNonce,
           ...(loginHint ? { login_hint: loginHint } : {}),
+          ...(prompt ? { prompt } : {}),
         }),
         headers: {
           'content-type': 'application/json',

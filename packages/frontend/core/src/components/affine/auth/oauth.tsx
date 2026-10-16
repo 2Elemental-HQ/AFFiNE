@@ -54,6 +54,9 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
         typeof sessionStorage !== 'undefined'
           ? sessionStorage.getItem('affine:login-hint') ?? undefined
           : undefined;
+      const isAddingOrSwitchingAccount =
+        auth.session.status$.value === 'authenticated' || Boolean(loginHint);
+      const prompt = isAddingOrSwitchingAccount ? 'login' : undefined;
 
       const open: () => Promise<void> | void = BUILD_CONFIG.isNative
         ? async () => {
@@ -63,7 +66,8 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
                 provider,
                 scheme ?? 'web',
                 undefined,
-                loginHint
+                loginHint,
+                prompt
               );
               if (typeof sessionStorage !== 'undefined') {
                 sessionStorage.removeItem('affine:login-hint');
@@ -84,6 +88,10 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
 
             if (loginHint) {
               params.set('login_hint', loginHint);
+            }
+
+            if (prompt) {
+              params.set('prompt', prompt);
             }
 
             params.set('keep_session', '1');
