@@ -115,7 +115,7 @@ const WorkspaceServerInfo = ({
           prefixIcon={<PlusIcon />}
           onClick={onAddAccount}
         >
-          {t['com.affine.brand.affineCloud'] ? `${t['com.affine.auth.sign.up']()} / Switch account` : 'Switch account'}
+          Add account
         </MenuItem>
       );
 
@@ -231,44 +231,41 @@ const CloudWorkSpaceList = ({
   const handleSignOut = useSignOut();
 
   const handleAddOrSwitchAccount = useAsyncCallback(async (targetEmail?: string) => {
-    if (typeof sessionStorage !== 'undefined') {
-      if (targetEmail) {
-        sessionStorage.setItem('affine:login-hint', targetEmail);
-      } else {
-        sessionStorage.removeItem('affine:login-hint');
-      }
-    }
-
-    let endSessionUrl: string | null = null;
-    try {
-      const res = await fetch(
-        `${server.baseUrl}/api/oauth/end-session?redirect_uri=${encodeURIComponent('/sign-in')}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        endSessionUrl = data.endSessionUrl;
-      }
-    } catch {
-      /* ignore */
-    }
-
-    if (accountStatus === 'authenticated') {
+    // 1. If switching to a specific known account, try instant backend session switch first!
+    // AFFiNE's backend supports multiple simultaneous UserSessions under a single affine_session cookie.
+    if (targetEmail) {
       try {
-        await authService.signOut();
-      } catch (e) {
-        console.error('Failed to sign out before switching account', e);
+        const switchRes = await fetch(`${server.baseUrl}/api/auth/switch-user`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: targetEmail }),
+        });
+        if (switchRes.ok) {
+          const switchData = await switchRes.json();
+          if (switchData.switched) {
+            await authService.session.revalidateOnce();
+            window.location.href = '/';
+            return;
+          }
+        }
+      } catch {
+        /* fallback to sign-in if not yet in current session */
       }
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('affine:login-hint', targetEmail);
+      }
+    } else if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('affine:login-hint');
     }
 
-    if (endSessionUrl) {
-      window.location.href = endSessionUrl;
-      return;
-    }
-
+    // 2. Account is not yet in the active backend session (or user clicked "Add account"):
+    // Do NOT call authService.signOut() and do NOT redirect to Authentik end-session portal.
+    // Preserving affine_session adds the second account to the same multi-user session,
+    // and opening the sign-in modal inside AFFiNE keeps the OAuth flow attached to AFFiNE!
     globalDialogService.open('sign-in', {
       server: server.baseUrl,
     });
-  }, [accountStatus, authService, globalDialogService, server.baseUrl]);
+  }, [authService.session, globalDialogService, server.baseUrl]);
 
   return (
     <>

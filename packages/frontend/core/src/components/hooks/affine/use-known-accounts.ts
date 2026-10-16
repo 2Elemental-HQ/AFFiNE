@@ -67,6 +67,37 @@ export const useKnownAccounts = () => {
     }
   }, [account?.id, account?.email, account?.label, account?.avatar]);
 
+  // Also sync any other users already authenticated in the current backend session
+  useEffect(() => {
+    fetch('/api/auth/users')
+      .then(res => (res.ok ? res.json() : null))
+      .then((data: { users?: Array<{ id: string; email: string; name?: string | null; avatarUrl?: string | null }> } | null) => {
+        if (!data?.users?.length) return;
+        setKnownAccounts(prev => {
+          let changed = false;
+          const next = [...prev];
+          for (const u of data.users) {
+            const idx = next.findIndex(a => a.id === u.id || a.email === u.email);
+            if (idx === -1) {
+              next.push({
+                id: u.id,
+                email: u.email,
+                name: u.name ?? undefined,
+                avatar: u.avatarUrl ?? undefined,
+              });
+              changed = true;
+            }
+          }
+          if (changed) {
+            setStoredAccounts(next);
+            return next;
+          }
+          return prev;
+        });
+      })
+      .catch(() => {});
+  }, [account?.id]);
+
   const removeAccount = useCallback((id: string) => {
     setKnownAccounts(prev => {
       const next = prev.filter(a => a.id !== id);

@@ -86,6 +86,7 @@ export function OAuth({ redirectUrl }: { redirectUrl?: string }) {
               params.set('login_hint', loginHint);
             }
 
+            params.set('keep_session', '1');
             params.set('flow', 'redirect');
 
             const oauthUrl =

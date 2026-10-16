@@ -62,8 +62,10 @@ export const loader: LoaderFunction = async ({ request }) => {
       ? sessionStorage.getItem('affine:login-hint')
       : null);
 
-  // sign out first, web only
-  if (client === 'web') {
+  const keepSession = searchParams.get('keep_session') === '1';
+
+  // sign out first, web only (unless adding/switching account in multi-account session)
+  if (client === 'web' && !keepSession) {
     const csrfToken = getCookieValue(CSRF_COOKIE_NAME);
     await fetch('/api/auth/sign-out', {
       method: 'POST',

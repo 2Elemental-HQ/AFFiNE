@@ -212,6 +212,50 @@ export class AuthController {
   }
 
   @Public()
+  @Get('/users')
+  @Header('Cache-Control', 'no-store')
+  async listSessionUsers(@Req() req: Request) {
+    const sessionId = getRequestCookie(req, AuthService.sessionCookieName);
+    if (!sessionId) {
+      return { users: [] };
+    }
+    try {
+      const users = await this.auth.getUserList(sessionId);
+      return { users };
+    } catch {
+      return { users: [] };
+    }
+  }
+
+  @Post('/switch-user')
+  @Header('Cache-Control', 'no-store')
+  async switchUser(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body?: { userId?: string; email?: string }
+  ) {
+    const sessionId = getRequestCookie(req, AuthService.sessionCookieName);
+    if (!sessionId) {
+      throw new ActionForbidden();
+    }
+
+    const users = await this.auth.getUserList(sessionId);
+    const targetUser = users.find(
+      u =>
+        (body?.userId && u.id === body.userId) ||
+        (body?.email && u.email.toLowerCase() === body.email.toLowerCase())
+    );
+
+    if (!targetUser) {
+      res.status(HttpStatus.OK).send({ switched: false });
+      return;
+    }
+
+    this.auth.setUserCookie(res, targetUser.id);
+    res.status(HttpStatus.OK).send({ switched: true, user: targetUser });
+  }
+
+  @Public()
   @UseNamedGuard('version')
   @Post('/open-app/sign-in-code')
   async openAppSignInCode(@CurrentUser() user?: CurrentUser) {
