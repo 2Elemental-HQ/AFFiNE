@@ -69,6 +69,7 @@ export const useKnownAccounts = () => {
 
   // Also sync any other users already authenticated in the current backend session
   useEffect(() => {
+    if (!account?.id) return;
     fetch('/api/auth/users')
       .then(res => (res.ok ? res.json() : null))
       .then((data: { users?: Array<{ id: string; email: string; name?: string | null; avatarUrl?: string | null }> } | null) => {

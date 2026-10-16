@@ -23,6 +23,7 @@ import {
   getRequestCookie,
   InvalidAuthState,
   InvalidEmail,
+  SkipThrottle,
   Throttle,
   UseNamedGuard,
   WrongSignInCredentials,
@@ -211,6 +212,7 @@ export class AuthController {
     res.status(HttpStatus.OK).send({});
   }
 
+  @SkipThrottle()
   @Public()
   @Get('/users')
   @Header('Cache-Control', 'no-store')
@@ -227,6 +229,7 @@ export class AuthController {
     }
   }
 
+  @SkipThrottle()
   @Post('/switch-user')
   @Header('Cache-Control', 'no-store')
   async switchUser(
