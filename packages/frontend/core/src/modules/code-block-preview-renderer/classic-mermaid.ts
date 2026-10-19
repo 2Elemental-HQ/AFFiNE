@@ -178,15 +178,25 @@ function adaptCodeForTheme(code: string, isDark: boolean): string {
 }
 
 function normalizeLineBreaksInLabels(code: string): string {
-  // In Mermaid with htmlLabels: true (default), literal \n in labels like ["Line1\nLine2"]
-  // collapses or concatenates unless converted to <br> or markdown syntax.
-  // Replace \n inside double-quoted or single-quoted strings:
-  return code.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, inner) => {
-    if (inner.includes('\\n')) {
-      return `"${inner.replace(/\\n/g, '<br>')}"`;
+  // In Mermaid with htmlLabels: true (default), literal \n or raw newlines in labels
+  // (e.g. ["Line1\nLine2"] or ['Line1\nLine2']) collapse or concatenate unless converted to <br/>.
+  let normalized = code.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, inner) => {
+    if (inner.includes('\\n') || inner.includes('\n')) {
+      const replaced = inner.replace(/\\n/g, '<br/>').replace(/\r?\n/g, '<br/>');
+      return `"${replaced}"`;
     }
     return match;
   });
+
+  normalized = normalized.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g, (match, inner) => {
+    if (inner.includes('\\n') || inner.includes('\n')) {
+      const replaced = inner.replace(/\\n/g, '<br/>').replace(/\r?\n/g, '<br/>');
+      return `'${replaced}'`;
+    }
+    return match;
+  });
+
+  return normalized;
 }
 
 export async function renderClassicMermaidSvg(

@@ -115,6 +115,20 @@ describe('preview render bridge', () => {
     expect(sanitized).not.toContain('<script');
   });
 
+  test('sanitizeSvg preserves foreignObject HTML elements and line breaks', () => {
+    if (typeof DOMParser === 'undefined') {
+      return;
+    }
+
+    const sanitized = sanitizeSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject width="10" height="10"><div xmlns="http://www.w3.org/1999/xhtml"><span>Line 1<br/>Line 2</span></div></foreignObject></svg>'
+    );
+
+    expect(sanitized).toContain('Line 1');
+    expect(sanitized).toMatch(/<br\s*\/?>/i);
+    expect(sanitized).toContain('Line 2');
+  });
+
   test('sanitizeSvg wraps sanitized svg fragments back into root svg', () => {
     if (typeof DOMParser === 'undefined') {
       return;

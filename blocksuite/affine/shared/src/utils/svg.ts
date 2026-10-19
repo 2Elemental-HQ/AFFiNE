@@ -147,13 +147,30 @@ function ensureSvgRoot(
 
 function sanitizeForeignObjects(
   root: ParentNode,
+  originalRoot?: ParentNode | null,
   options?: SanitizeSvgOptions
 ) {
-  root.querySelectorAll('foreignObject, foreignobject').forEach(element => {
-    element.innerHTML = DOMPurify.sanitize(
-      element.innerHTML,
+  const originalForeignObjects = originalRoot
+    ? Array.from(
+        originalRoot.querySelectorAll('foreignObject, foreignobject')
+      )
+    : [];
+
+  root.querySelectorAll('foreignObject, foreignobject').forEach((element, index) => {
+    const rawHtml =
+      originalForeignObjects[index]?.innerHTML ?? element.innerHTML;
+    let sanitizedHtml = DOMPurify.sanitize(
+      rawHtml,
       getForeignObjectHtmlSanitizeConfig(options)
     );
+    // Ensure void elements are closed for XML / SVG document serialization
+    sanitizedHtml = sanitizedHtml
+      .replace(/<br(\s*[^>]*)?>/gi, '<br$1/>')
+      .replace(/<hr(\s*[^>]*)?>/gi, '<hr$1/>')
+      .replace(/<img(\s*[^>]*)?>/gi, '<img$1/>')
+      .replace(/<input(\s*[^>]*)?>/gi, '<input$1/>');
+
+    element.innerHTML = sanitizedHtml;
   });
 }
 
@@ -290,7 +307,7 @@ function sanitizeSvgWithDepth(
   if (typeof sanitized !== 'string') return '';
   const sanitizedRoot = ensureSvgRoot(originalRoot, sanitized, parser);
   if (!sanitizedRoot) return '';
-  sanitizeForeignObjects(sanitizedRoot, options);
+  sanitizeForeignObjects(sanitizedRoot, originalRoot, options);
   tightenSvgTree(sanitizedRoot, options, depth);
   return new XMLSerializer().serializeToString(sanitizedRoot).trim();
 }

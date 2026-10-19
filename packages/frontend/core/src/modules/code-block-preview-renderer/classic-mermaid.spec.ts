@@ -79,15 +79,32 @@ describe('renderClassicMermaidSvg', () => {
     );
   });
 
-  test('uses svg text labels so preview sanitization keeps diagram text', async () => {
+  test('enables htmlLabels for rich labels and diagram styling', async () => {
     render.mockResolvedValue({ svg: '<svg>ok</svg>' });
 
     await renderClassicMermaidSvg({ code: 'flowchart TD;A-->B' });
 
     expect(initialize).toHaveBeenCalledWith(
       expect.objectContaining({
-        htmlLabels: false,
+        htmlLabels: true,
       })
+    );
+  });
+
+  test('normalizes literal \\n and raw newlines in quoted labels to <br/>', async () => {
+    render.mockResolvedValue({ svg: '<svg>ok</svg>' });
+
+    await renderClassicMermaidSvg({
+      code: 'flowchart TD\nTEAM["TEAM\\nResponsibilities"]\nROLE["ROLE\\n\'Soul\'"]',
+    });
+
+    expect(render).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('TEAM["TEAM<br/>Responsibilities"]')
+    );
+    expect(render).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('ROLE["ROLE<br/>\'Soul\'"]')
     );
   });
 
