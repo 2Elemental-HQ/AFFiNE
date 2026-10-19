@@ -177,13 +177,26 @@ function adaptCodeForTheme(code: string, isDark: boolean): string {
   return adapted;
 }
 
+function normalizeLineBreaksInLabels(code: string): string {
+  // In Mermaid with htmlLabels: true (default), literal \n in labels like ["Line1\nLine2"]
+  // collapses or concatenates unless converted to <br> or markdown syntax.
+  // Replace \n inside double-quoted or single-quoted strings:
+  return code.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, inner) => {
+    if (inner.includes('\\n')) {
+      return `"${inner.replace(/\\n/g, '<br>')}"`;
+    }
+    return match;
+  });
+}
+
 export async function renderClassicMermaidSvg(
   request: MermaidRenderRequest
 ): Promise<MermaidRenderResult> {
   return enqueueClassicMermaidRender(async () => {
     const mermaid = await loadMermaid();
     const isDark = request.options?.theme === 'dark';
-    const code = adaptCodeForTheme(request.code, isDark);
+    const normalizedCode = normalizeLineBreaksInLabels(request.code);
+    const code = adaptCodeForTheme(normalizedCode, isDark);
     const hasCustomConfig = hasCustomMermaidConfig(code);
 
     const baseConfig = createClassicMermaidConfig(request.options);
